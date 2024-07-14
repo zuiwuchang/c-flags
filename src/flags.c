@@ -4,7 +4,7 @@
 
 static ppp_c_flags_malloc_f ppp_c_flags_malloc = malloc;
 static ppp_c_flags_free_f ppp_c_flags_free = free;
-
+static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command);
 const char *ppp_c_flags_error(int err)
 {
     switch (err)
@@ -33,6 +33,8 @@ const char *ppp_c_flags_error(int err)
         return "malloc command fial";
     case PPP_C_FLAGS_ERROR_MALLOC_ARGV:
         return "malloc argv fail";
+    case PPP_C_FLAGS_ERROR_INVALID_ARGUMENT:
+        return "invalid argument";
     }
     return "unknow error";
 }
@@ -440,22 +442,46 @@ static int ppp_c_flags_push_args(ppp_c_flags_execute_args_t *args, char *s)
         }
     }
     args->handler_argv[args->handler_argc++] = s;
-
+    args->i++;
     return 0;
 }
-static uint8_t ppp_c_flags_start_with(const char *s, size_t s_len, const char *sub, size_t sub_len)
-{
-    if (!sub_len)
-    {
-        return 1;
-    }
-    if (s_len < sub_len)
-    {
-        return 0;
-    }
-    return memcmp(s, sub, sub_len) ? 0 : 1;
-}
 
+static int8_t ppp_c_flags_is_true(const char *s, size_t s_len)
+{
+    switch (s_len)
+    {
+    case 1:
+        switch (s[0])
+        {
+        case '1':
+        case 't':
+        case 'T':
+            return 1;
+        case '0':
+        case 'f':
+        case 'F':
+            return 0;
+        }
+        break;
+    case 4:
+        if (!memcmp(s, "true", 4) ||
+            !memcmp(s, "TRUE", 4) ||
+            !memcmp(s, "True", 4))
+        {
+            return 1;
+        }
+        break;
+    case 5:
+        if (!memcmp(s, "false", 5) ||
+            !memcmp(s, "FALSE", 5) ||
+            !memcmp(s, "False", 5))
+        {
+            return 0;
+        }
+        break;
+    }
+    return -1;
+}
 #define PPP_C_FLAGS_STATE_NONE 0
 #define PPP_C_FLAGS_STATE_FLAGS 1
 #define PPP_C_FLAGS_STATE_FLAGS_SHORT 2
@@ -468,7 +494,7 @@ static int ppp_c_flags_next(ppp_c_flags_execute_args_t *args)
         {
             return ppp_c_flags_call(args);
         }
-        args->s = args->argv[args->i++];
+        args->s = args->argv[args->i];
         args->s_len = strlen(args->s);
         // --
         if (args->s_len > 1)
@@ -514,13 +540,56 @@ static int ppp_c_flags_next(ppp_c_flags_execute_args_t *args)
             ppp_c_flags_print(args->command);
             return 1;
         }
+        else if (args->s_len > 4 && !memcmp(args->s, "help=", 5))
+        {
+            int8_t ok = ppp_c_flags_is_true(args->s + 5, args->s_len - 5);
+            switch (ok)
+            {
+            case 0:
+                args->i++;
+                args->state = PPP_C_FLAGS_STATE_NONE;
+                return 0;
+            case 1:
+                ppp_c_flags_print(args->command);
+                return 1;
+            default:
+                printf("Error: invalid argument %s\n", args->argv[args->i]);
+                ppp_c_flags_print_usage(args->command);
+                return 1;
+            }
+        }
         break;
     case PPP_C_FLAGS_STATE_FLAGS_SHORT:
+        // -h
+        if (args->s_len == 1 && args->s[0] == 'h')
+        {
+            ppp_c_flags_print(args->command);
+            return 1;
+        }
+        else if (args->s_len > 1 && !memcmp(args->s, "h=", 2))
+        {
+            int8_t ok = ppp_c_flags_is_true(args->s + 2, args->s_len - 2);
+            switch (ok)
+            {
+            case 0:
+                args->i++;
+                args->state = PPP_C_FLAGS_STATE_NONE;
+                return 0;
+            case 1:
+                ppp_c_flags_print(args->command);
+                return 1;
+            default:
+                printf("Error: invalid argument %s\n", args->argv[args->i]);
+                ppp_c_flags_print_usage(args->command);
+                return 1;
+            }
+        }
+
         break;
     }
     return 0;
 }
-void ppp_c_flags_print_name(ppp_c_flags_command_t *command)
+static void ppp_c_flags_print_name(ppp_c_flags_command_t *command)
 {
     if (command->_parent)
     {
@@ -532,7 +601,7 @@ void ppp_c_flags_print_name(ppp_c_flags_command_t *command)
         printf("%s", command->_name);
     }
 }
-uint8_t ppp_c_flags_is_delimiter(const char c)
+static uint8_t ppp_c_flags_is_delimiter(const char c)
 {
     switch (c)
     {
@@ -634,7 +703,7 @@ static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
     break;
     }
 }
-void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
+static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
 {
     size_t i;
     char buf[2 + 21 + 1] = {0};
@@ -777,7 +846,10 @@ int ppp_c_flags_execute(
     args.argc = argc;
     args.argv = argv;
     args.handler_result = handler_result;
-
+    if (handler_result)
+    {
+        *handler_result = 0;
+    }
     while (!ppp_c_flags_next(&args))
     {
     }
