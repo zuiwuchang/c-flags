@@ -142,6 +142,23 @@ void ppp_c_flags_print(ppp_c_flags_command_t *command);
 int ppp_c_flags_execute(
     ppp_c_flags_command_t *root,
     int argc, char **argv,
-    int *handler_result);
-
+    uint8_t allow_unknow, int *handler_result);
+/**
+ * ok: return 0;
+ * overflow: return 1;
+ * syntax: return -1;
+ */
+int ppp_c_flags_parse_uint64(const char *s, size_t s_len, uint64_t *output);
+/**
+ * ok: return 0;
+ * overflow: return 1;
+ * syntax: return -1;
+ */
+int ppp_c_flags_parse_int64(const char *s, size_t s_len, int64_t *output);
+/**
+ * case "1", "t", "T", "true", "TRUE", "True": return 1;
+ * case "0", "f", "F", "false", "FALSE", "False": return 0;
+ * elsecase return -1;
+ */
+int ppp_c_flags_parse_bool(const char *s, const size_t s_len);
 #endif

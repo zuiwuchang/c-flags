@@ -23,6 +23,16 @@ static int root_handler(ppp_c_flags_command_t *command, int argc, char **argv, v
         flags->addr,
         flags->port,
         flags->protocol);
+
+    // Other argv, contains unknown flags
+    if (argc)
+    {
+        printf("args:\n");
+        for (int i = 0; i < argc; i++)
+        {
+            printf("  %3d. %s\n", i + 1, argv[i]);
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -89,7 +99,7 @@ int main(int argc, char **argv)
     err = ppp_c_flags_execute(
         root,
         argc - 1, argv + 1, // Remove program startup path
-        0);
+        1, 0);
 FAIL:
     // Clean up resources used by commands
     ppp_c_flags_command_destroy(root);
