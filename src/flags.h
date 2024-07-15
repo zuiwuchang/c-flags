@@ -18,31 +18,35 @@
 #define PPP_C_FLAGS_ERROR_MALLOC_COMMAND 11
 #define PPP_C_FLAGS_ERROR_MALLOC_ARGV 12
 #define PPP_C_FLAGS_ERROR_INVALID_ARGUMENT 13
+#define PPP_C_FLAGS_ERROR_UNKNOW_FLAG 14
+#define PPP_C_FLAGS_ERROR_UNKNOW_SHORT_FLAG 15
 
 /**
  * Get error string information
  */
 const char *ppp_c_flags_error(int err);
 
-#define PPP_C_FLAGS_TYPE_INT 1
-#define PPP_C_FLAGS_TYPE_UINT 2
-#define PPP_C_FLAGS_TYPE_BOOL 3
-#define PPP_C_FLAGS_TYPE_STRING 4
+#define PPP_C_FLAGS_TYPE_BOOL 1
+#define PPP_C_FLAGS_TYPE_INT64 2
+#define PPP_C_FLAGS_TYPE_UINT64 3
+#define PPP_C_FLAGS_TYPE_FLOAT64 4
+#define PPP_C_FLAGS_TYPE_STRING 5
 
-#define PPP_C_FLAGS_INT int64_t
-#define PPP_C_FLAGS_UINT uint64_t
 #define PPP_C_FLAGS_BOOL uint8_t
+#define PPP_C_FLAGS_INT64 int64_t
+#define PPP_C_FLAGS_UINT64 uint64_t
+#define PPP_C_FLAGS_FLOAT64 double
 #define PPP_C_FLAGS_STRING const char *
 
 typedef struct
 {
-    uint8_t _type;
-    void *_p;
-    size_t _cap;
-    size_t _len;
+    uint8_t p_type;
+    void *p;
+    size_t cap;
+    size_t len;
 } ppp_c_flags_array_t;
 
-struct ppp_c_flags_flag
+typedef struct ppp_c_flags_flag
 {
     // next flag
     struct ppp_c_flags_flag *_next;
@@ -55,7 +59,9 @@ struct ppp_c_flags_flag
     size_t _name_len;
     char _short_name;
     const char *_describe;
-};
+
+    void *_handler;
+} ppp_c_flags_flag_t;
 
 typedef struct ppp_c_flags_command
 {
@@ -157,19 +163,21 @@ ppp_c_flags_command_t *ppp_c_flags_add_command(
 /**
  * Add a flag
  */
-int ppp_c_flags_add_flag_with_len(
+ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     ppp_c_flags_command_t *command,
     const char *name, const size_t name_len, char short_name,
     const char *describe,
-    void *value, const int value_type);
+    void *value, const int value_type,
+    int *err);
 /**
  * Add a flag
  */
-int ppp_c_flags_add_flag(
+ppp_c_flags_flag_t *ppp_c_flags_add_flag(
     ppp_c_flags_command_t *command,
     const char *name, char short_name,
     const char *describe,
-    void *value, const int value_type);
+    void *value, const int value_type,
+    int *err);
 
 /**
  * Instructions for using the output command

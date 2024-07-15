@@ -1,6 +1,135 @@
 #include "flags.h"
 #include "string.h"
 #include <stdio.h>
+#include <errno.h>
+typedef struct
+{
+    const char *name;
+    size_t name_len;
+
+    void (*print_default)(ppp_c_flags_flag_t *flag);
+    int (*set_flag)(ppp_c_flags_flag_t *flag, const char *s, size_t s_len);
+} ppp_c_flags_flag_handler_t;
+static void ppp_c_flags_handler_bool_print_default(ppp_c_flags_flag_t *flag)
+{
+    if (*(PPP_C_FLAGS_BOOL *)(&flag->_default))
+    {
+        printf("<default: true>");
+    }
+}
+static int ppp_c_flags_handler_bool_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    switch (ppp_c_flags_parse_bool(s, s_len))
+    {
+    case 0:
+        *(PPP_C_FLAGS_BOOL *)flag->_value = 0;
+        return 0;
+    case 1:
+        *(PPP_C_FLAGS_BOOL *)flag->_value = 1;
+        return 0;
+    default:
+        return -1;
+    }
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_bool = {
+    .name = "bool",
+    .name_len = 4,
+    .print_default = ppp_c_flags_handler_bool_print_default,
+    .set_flag = ppp_c_flags_handler_bool_set_flag,
+};
+static void ppp_c_flags_handler_int64_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_INT64 val = *(PPP_C_FLAGS_INT64 *)(&flag->_default);
+    if (val)
+    {
+        printf("<value: %ld>", val);
+    }
+}
+static int ppp_c_flags_handler_int64_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    return ppp_c_flags_parse_int64(
+        s, s_len,
+        0, 0,
+        flag->_value);
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int64 = {
+    .name = "int64",
+    .name_len = 5,
+    .print_default = ppp_c_flags_handler_int64_print_default,
+    .set_flag = ppp_c_flags_handler_int64_set_flag,
+};
+static void ppp_c_flags_handler_uint64_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_UINT64 val = *(PPP_C_FLAGS_UINT64 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %lu>", val);
+    }
+}
+static int ppp_c_flags_handler_uint64_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    return ppp_c_flags_parse_uint64(
+        s, s_len,
+        0, 0,
+        flag->_value);
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint64 = {
+    .name = "uint64",
+    .name_len = 6,
+    .print_default = ppp_c_flags_handler_uint64_print_default,
+    .set_flag = ppp_c_flags_handler_uint64_set_flag,
+};
+static void ppp_c_flags_handler_float64_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_FLOAT64 val = *(PPP_C_FLAGS_FLOAT64 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %g>", val);
+    }
+}
+static int ppp_c_flags_handler_float64_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    int err = errno;
+    errno = 0;
+    char *end = 0;
+    double v = strtod(s, &end);
+    if (errno)
+    {
+        return -1;
+    }
+    errno = err;
+    if (end && end[0] != 0)
+    {
+        return -1;
+    }
+    *(PPP_C_FLAGS_FLOAT64 *)flag->_value = v;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_float64 = {
+    .name = "float64",
+    .name_len = 7,
+    .print_default = ppp_c_flags_handler_float64_print_default,
+    .set_flag = ppp_c_flags_handler_float64_set_flag,
+};
+static void ppp_c_flags_handler_string_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_STRING s = *(PPP_C_FLAGS_STRING *)(&flag->_default);
+    if (s && s[0] != 0)
+    {
+        printf("<default: %s>", s);
+    }
+}
+static int ppp_c_flags_handler_string_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    *(PPP_C_FLAGS_STRING *)flag->_value = s;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_string = {
+    .name = "string",
+    .name_len = 6,
+    .print_default = ppp_c_flags_handler_string_print_default,
+    .set_flag = ppp_c_flags_handler_string_set_flag,
+};
 
 #define PPP_C_FLAGS_STATE_NONE 0
 #define PPP_C_FLAGS_STATE_FLAGS 1
@@ -41,6 +170,10 @@ const char *ppp_c_flags_error(int err)
         return "malloc argv fail";
     case PPP_C_FLAGS_ERROR_INVALID_ARGUMENT:
         return "invalid argument";
+    case PPP_C_FLAGS_ERROR_UNKNOW_FLAG:
+        return "unknow flag";
+    case PPP_C_FLAGS_ERROR_UNKNOW_SHORT_FLAG:
+        return "unknow short flag";
     }
     return "unknow error";
 }
@@ -613,34 +746,52 @@ ppp_c_flags_command_t *ppp_c_flags_add_command(
         handler, userdata,
         err);
 }
-int ppp_c_flags_add_flag_with_len(
+ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     ppp_c_flags_command_t *command,
     const char *name, const size_t name_len, char short_name,
     const char *describe,
-    void *value, const int value_type)
+    void *value, const int value_type,
+    int *err)
 {
     if (!ppp_c_flags_check_flag(name, name_len))
     {
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        }
+        return 0;
     }
     else if (name_len == 4 && !memcmp(name, "help", 4))
     {
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG_HELP;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG_HELP;
+        }
+        return 0;
     }
     else if (short_name == 'h')
     {
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG_SHORT_HELP;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG_SHORT_HELP;
+        }
+        return 0;
     }
 
     switch (value_type)
     {
-    case PPP_C_FLAGS_TYPE_INT:
-    case PPP_C_FLAGS_TYPE_UINT:
     case PPP_C_FLAGS_TYPE_BOOL:
+    case PPP_C_FLAGS_TYPE_INT64:
+    case PPP_C_FLAGS_TYPE_UINT64:
+    case PPP_C_FLAGS_TYPE_FLOAT64:
     case PPP_C_FLAGS_TYPE_STRING:
         break;
     default:
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG_TYPE;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG_TYPE;
+        }
+        return 0;
     }
     struct ppp_c_flags_flag *back = command->_flag;
     if (back)
@@ -649,28 +800,48 @@ int ppp_c_flags_add_flag_with_len(
         {
             if (name_len == back->_name_len && !memcmp(name, back->_name, name_len))
             {
-                return PPP_C_FLAGS_ERROR_DUPLICATE_FLAG;
+                if (err)
+                {
+                    *err = PPP_C_FLAGS_ERROR_DUPLICATE_FLAG;
+                }
+                return 0;
             }
             else if (short_name && short_name == back->_short_name)
             {
-                return PPP_C_FLAGS_ERROR_DUPLICATE_FLAG_SHORT;
+                if (err)
+                {
+                    *err = PPP_C_FLAGS_ERROR_DUPLICATE_FLAG_SHORT;
+                }
+                return 0;
             }
             back = back->_next;
         }
         if (name_len == back->_name_len && !memcmp(name, back->_name, name_len))
         {
-            return PPP_C_FLAGS_ERROR_DUPLICATE_FLAG;
+            if (err)
+            {
+                *err = PPP_C_FLAGS_ERROR_DUPLICATE_FLAG;
+            }
+            return 0;
         }
         else if (short_name && short_name == back->_short_name)
         {
-            return PPP_C_FLAGS_ERROR_DUPLICATE_FLAG_SHORT;
+            if (err)
+            {
+                *err = PPP_C_FLAGS_ERROR_DUPLICATE_FLAG_SHORT;
+            }
+            return 0;
         }
     }
 
     struct ppp_c_flags_flag *flag = ppp_c_flags_malloc(sizeof(struct ppp_c_flags_flag));
     if (!flag)
     {
-        return PPP_C_FLAGS_ERROR_MALLOC_FLAG;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_MALLOC_FLAG;
+        }
+        return 0;
     }
     memset(flag, 0, sizeof(struct ppp_c_flags_flag));
     // flag->_next = 0;
@@ -678,17 +849,25 @@ int ppp_c_flags_add_flag_with_len(
     void *p = &flag->_default;
     switch (value_type)
     {
-    case PPP_C_FLAGS_TYPE_INT:
-        *(PPP_C_FLAGS_INT *)p = *(PPP_C_FLAGS_INT *)value;
-        break;
-    case PPP_C_FLAGS_TYPE_UINT:
-        *(PPP_C_FLAGS_UINT *)p = *(PPP_C_FLAGS_UINT *)value;
-        break;
     case PPP_C_FLAGS_TYPE_BOOL:
         *(PPP_C_FLAGS_BOOL *)p = *(PPP_C_FLAGS_BOOL *)value;
+        flag->_handler = &ppp_c_flags_handler_bool;
+        break;
+    case PPP_C_FLAGS_TYPE_INT64:
+        *(PPP_C_FLAGS_INT64 *)p = *(PPP_C_FLAGS_INT64 *)value;
+        flag->_handler = &ppp_c_flags_handler_int64;
+        break;
+    case PPP_C_FLAGS_TYPE_UINT64:
+        *(PPP_C_FLAGS_UINT64 *)p = *(PPP_C_FLAGS_UINT64 *)value;
+        flag->_handler = &ppp_c_flags_handler_uint64;
+        break;
+    case PPP_C_FLAGS_TYPE_FLOAT64:
+        *(PPP_C_FLAGS_FLOAT64 *)p = *(PPP_C_FLAGS_FLOAT64 *)value;
+        flag->_handler = &ppp_c_flags_handler_float64;
         break;
     case PPP_C_FLAGS_TYPE_STRING:
         *(PPP_C_FLAGS_STRING *)p = *(PPP_C_FLAGS_STRING *)value;
+        flag->_handler = &ppp_c_flags_handler_string;
         break;
     }
 
@@ -707,28 +886,42 @@ int ppp_c_flags_add_flag_with_len(
     {
         command->_flag = flag;
     }
-    return 0;
+    if (err)
+    {
+        *err = 0;
+    }
+    return flag;
 }
-int ppp_c_flags_add_flag(
+ppp_c_flags_flag_t *ppp_c_flags_add_flag(
     ppp_c_flags_command_t *command,
     const char *name, char short_name,
     const char *describe,
-    void *value, const int value_type)
+    void *value, const int value_type,
+    int *err)
 {
     if (!name)
     {
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        }
+        return 0;
     }
     size_t name_len = strlen(name);
     if (!name_len)
     {
-        return PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        if (err)
+        {
+            *err = PPP_C_FLAGS_ERROR_INVALID_FLAG;
+        }
+        return 0;
     }
     return ppp_c_flags_add_flag_with_len(
         command,
         name, name_len, short_name,
         describe,
-        value, value_type);
+        value, value_type,
+        err);
 }
 typedef struct
 {
@@ -844,44 +1037,22 @@ static uint8_t ppp_c_flags_is_delimiter(const char c)
     }
     return 0;
 }
-static size_t ppp_c_flags_print_flag_len(struct ppp_c_flags_flag *flag)
+
+static void ppp_c_flags_print_flag(char *buf, size_t len, ppp_c_flags_flag_t *flag)
 {
-    switch (flag->_type)
+    if (flag)
     {
-    case PPP_C_FLAGS_TYPE_INT:
-        return flag->_name_len + 1 + 5;
-    case PPP_C_FLAGS_TYPE_UINT:
-        return flag->_name_len + 1 + 6;
-    case PPP_C_FLAGS_TYPE_BOOL:
-        return flag->_name_len + 1 + 4;
-    // case PPP_C_FLAGS_TYPE_STRING:
-    default:
-        return flag->_name_len + 1 + 6;
+        printf("%s ", flag->_name);
+        len -= flag->_name_len;
+        sprintf(buf + 2, "%lds", len - 1);
+        printf(buf, ((ppp_c_flags_flag_handler_t *)(flag->_handler))->name);
     }
-}
-static void ppp_c_flags_print_flag(
-    char *buf, size_t len,
-    const char *name, size_t name_len,
-    uint8_t value_type)
-{
-    printf("%s ", name);
-    len -= name_len;
-    sprintf(buf + 2, "%lds", len - 1);
-    switch (value_type)
+    else
     {
-    case PPP_C_FLAGS_TYPE_INT:
-        printf(buf, "int64");
-        break;
-    case PPP_C_FLAGS_TYPE_UINT:
-        printf(buf, "uint64");
-        break;
-    case PPP_C_FLAGS_TYPE_BOOL:
+        printf("help ");
+        len -= 4;
+        sprintf(buf + 2, "%lds", len - 1);
         printf(buf, "bool");
-        break;
-    // case PPP_C_FLAGS_TYPE_STRING:
-    default:
-        printf(buf, "string");
-        break;
     }
 }
 static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
@@ -890,47 +1061,7 @@ static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
     {
         putchar(' ');
     }
-    void *p = &flag->_default;
-
-    switch (flag->_type)
-    {
-    case PPP_C_FLAGS_TYPE_INT:
-    {
-        PPP_C_FLAGS_INT val = *(PPP_C_FLAGS_INT *)p;
-        if (val)
-        {
-            printf("<value: %ld>", val);
-        }
-    }
-    break;
-    case PPP_C_FLAGS_TYPE_UINT:
-    {
-        PPP_C_FLAGS_UINT val = *(PPP_C_FLAGS_UINT *)p;
-        if (val)
-        {
-            printf("<default: %lu>", val);
-        }
-    }
-    break;
-    case PPP_C_FLAGS_TYPE_BOOL:
-    {
-        if (*(PPP_C_FLAGS_BOOL *)p)
-        {
-            printf("<default: true>");
-        }
-    }
-    break;
-    // case PPP_C_FLAGS_TYPE_STRING:
-    default:
-    {
-        PPP_C_FLAGS_STRING val = *(PPP_C_FLAGS_STRING *)p;
-        if (val && val[0] != 0)
-        {
-            printf("<default: %s>", val);
-        }
-    }
-    break;
-    }
+    ((ppp_c_flags_flag_handler_t *)(flag->_handler))->print_default(flag);
 }
 static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
 {
@@ -994,7 +1125,7 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
     min = 4 + 1 + 5;
     while (flag)
     {
-        i = ppp_c_flags_print_flag_len(flag);
+        i = flag->_name_len + 1 + ((ppp_c_flags_flag_handler_t *)(flag->_handler))->name_len;
         if (min < i)
         {
             min = i;
@@ -1011,10 +1142,7 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
         if (flag->_short_name)
         {
             printf("  -%c, --", flag->_short_name);
-            ppp_c_flags_print_flag(
-                buf, min,
-                flag->_name, flag->_name_len,
-                flag->_type);
+            ppp_c_flags_print_flag(buf, min, flag);
             if (flag->_describe && !ppp_c_flags_is_delimiter(flag->_describe[0]))
             {
 
@@ -1030,10 +1158,7 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
         else
         {
             printf("      --");
-            ppp_c_flags_print_flag(
-                buf, min,
-                flag->_name, flag->_name_len,
-                flag->_type);
+            ppp_c_flags_print_flag(buf, min, flag);
             if (flag->_describe && !ppp_c_flags_is_delimiter(flag->_describe[0]))
             {
                 printf("   ");
@@ -1048,7 +1173,7 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
         flag = flag->_next;
     }
     printf("  -h, --");
-    ppp_c_flags_print_flag(buf, min, "help", 4, PPP_C_FLAGS_TYPE_BOOL);
+    ppp_c_flags_print_flag(buf, min, 0);
     printf("   Help for %s\n", command->_name);
 
     if (command->_child)
@@ -1142,49 +1267,19 @@ static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, st
         return 1;
     }
     args->s = args->argv[args->i + 1];
-
-    switch (flag->_type)
+    args->s_len = strlen(args->s);
+    if (((ppp_c_flags_flag_handler_t *)(flag->_handler))->set_flag(flag, args->s, args->s_len))
     {
-    case PPP_C_FLAGS_TYPE_INT:
-        if (ppp_c_flags_parse_int64(
-                args->s, strlen(args->s),
-                0, 0,
-                flag->_value))
+        if (isshort)
         {
-            if (isshort)
-            {
-                printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
-            }
-            else
-            {
-                printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
-            }
-            ppp_c_flags_print_usage(args->command);
-            return 1;
+            printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
         }
-        break;
-    case PPP_C_FLAGS_TYPE_UINT:
-        if (ppp_c_flags_parse_uint64(
-                args->s, strlen(args->s),
-                0, 0,
-                flag->_value))
+        else
         {
-            if (isshort)
-            {
-                printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
-            }
-            else
-            {
-                printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
-            }
-            ppp_c_flags_print_usage(args->command);
-            return 1;
+            printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
         }
-        break;
-    // case PPP_C_FLAGS_TYPE_STRING:
-    default:
-        *(PPP_C_FLAGS_STRING *)flag->_value = args->s;
-        break;
+        ppp_c_flags_print_usage(args->command);
+        return 1;
     }
     args->i += 2;
     args->state = PPP_C_FLAGS_STATE_NONE;
@@ -1208,69 +1303,18 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
         args->s_len--;
         break;
     }
-    switch (flag->_type)
+    if (((ppp_c_flags_flag_handler_t *)(flag->_handler))->set_flag(flag, args->s, args->s_len))
     {
-    case PPP_C_FLAGS_TYPE_INT:
-        if (ppp_c_flags_parse_int64(
-                args->s, args->s_len,
-                0, 0,
-                flag->_value))
+        if (isshort)
         {
-            if (isshort)
-            {
-                printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
-            }
-            else
-            {
-                printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
-            }
-            ppp_c_flags_print_usage(args->command);
-            return 1;
+            printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
         }
-        break;
-    case PPP_C_FLAGS_TYPE_UINT:
-        if (ppp_c_flags_parse_uint64(
-                args->s, args->s_len,
-                0, 0,
-                flag->_value))
+        else
         {
-            if (isshort)
-            {
-                printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
-            }
-            else
-            {
-                printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
-            }
-            ppp_c_flags_print_usage(args->command);
-            return 1;
+            printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
         }
-        break;
-    case PPP_C_FLAGS_TYPE_BOOL:
-        switch (ppp_c_flags_parse_bool(args->s, args->s_len))
-        {
-        case 0:
-            *(PPP_C_FLAGS_BOOL *)flag->_value = 0;
-            break;
-        case 1:
-            *(PPP_C_FLAGS_BOOL *)flag->_value = 1;
-            return 1;
-        default:
-            if (isshort)
-            {
-                printf("Error: invalid argument for -%c: %s\n", flag->_short_name, args->s);
-            }
-            else
-            {
-                printf("Error: invalid argument for --%s: %s\n", flag->_name, args->s);
-            }
-            ppp_c_flags_print_usage(args->command);
-            return 1;
-        }
-        break;
-    default:
-        *(PPP_C_FLAGS_STRING *)flag->_value = args->s;
-        break;
+        ppp_c_flags_print_usage(args->command);
+        return 1;
     }
     args->i++;
     args->state = PPP_C_FLAGS_STATE_NONE;
@@ -1300,6 +1344,7 @@ static int ppp_c_flags_next_flags(ppp_c_flags_execute_args_t *args)
         default:
             printf("Error: invalid argument for --help: %s\n", args->s);
             ppp_c_flags_print_usage(args->command);
+            args->err = PPP_C_FLAGS_ERROR_INVALID_ARGUMENT;
             return 1;
         }
     }
@@ -1329,6 +1374,7 @@ static int ppp_c_flags_next_flags(ppp_c_flags_execute_args_t *args)
     }
     printf("Error: unknown flag: --%s\n", args->s);
     ppp_c_flags_print_usage(args->command);
+    args->err = PPP_C_FLAGS_ERROR_UNKNOW_FLAG;
     return 1;
 }
 static int ppp_c_flags_next_short(ppp_c_flags_execute_args_t *args)
@@ -1355,6 +1401,7 @@ static int ppp_c_flags_next_short(ppp_c_flags_execute_args_t *args)
         default:
             printf("Error: invalid argument for -h: %s\n", args->s);
             ppp_c_flags_print_usage(args->command);
+            args->err = PPP_C_FLAGS_ERROR_INVALID_ARGUMENT;
             return 1;
         }
     }
@@ -1401,6 +1448,7 @@ static int ppp_c_flags_next_short(ppp_c_flags_execute_args_t *args)
     }
     printf("Error: unknown short flag: -%c\n", args->s[0]);
     ppp_c_flags_print_usage(args->command);
+    args->err = PPP_C_FLAGS_ERROR_UNKNOW_SHORT_FLAG;
     return 1;
 }
 

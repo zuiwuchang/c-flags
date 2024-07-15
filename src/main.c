@@ -6,8 +6,9 @@ typedef struct
 {
     PPP_C_FLAGS_BOOL debug;
     PPP_C_FLAGS_STRING addr;
-    PPP_C_FLAGS_UINT port;
-    PPP_C_FLAGS_INT protocol;
+    PPP_C_FLAGS_UINT64 port;
+    PPP_C_FLAGS_INT64 protocol;
+    PPP_C_FLAGS_FLOAT64 limit;
 } root_flags_t;
 // define a handler for command, write the processing logic of the command here
 static int root_handler(ppp_c_flags_command_t *command, int argc, char **argv, void *userdata)
@@ -18,11 +19,12 @@ static int root_handler(ppp_c_flags_command_t *command, int argc, char **argv, v
     // Different logic is executed based on the flags passed in.
     // For the simplicity of demonstration, the flags are just printed here.
     printf(
-        "root_handler:\n  debug=%s\n  addr=%s\n  port=%lu\n  protocol=%ld\n",
+        "root_handler:\n  debug=%s\n  addr=%s\n  port=%lu\n  protocol=%ld\n  limit=%g\n",
         flags->debug ? "true" : "false",
         flags->addr,
         flags->port,
-        flags->protocol);
+        flags->protocol,
+        flags->limit);
 
     // Other argv, contains unknown flags
     if (argc)
@@ -33,8 +35,8 @@ static int root_handler(ppp_c_flags_command_t *command, int argc, char **argv, v
             printf("  %3d. %s\n", i + 1, argv[i]);
         }
     }
+    return 0;
 }
-
 int main(int argc, char **argv)
 {
     int err;
@@ -51,45 +53,60 @@ int main(int argc, char **argv)
         return -1;
     }
     // Create flags for commands
-    if (err = ppp_c_flags_add_flag(
+    if (!ppp_c_flags_add_flag(
             root,
             "debug", 'd', // 0 not use short flags
             "Run in debug mode",
-            &main_falgs.debug, PPP_C_FLAGS_TYPE_BOOL // Bind flags to memory for the parser to store parsed values
-            ))
+            &main_falgs.debug, PPP_C_FLAGS_TYPE_BOOL, // Bind flags to memory for the parser to store parsed values
+            &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
 
     main_falgs.addr = "127.0.0.1"; // Set default value ​​for bind parameters
-    if (err = ppp_c_flags_add_flag(
+    if (!ppp_c_flags_add_flag(
             root,
             "addr", 'a', // 'a' as flags short name, "-a xxx" "-a=xxx" "-axxx"
             "TCP bind ip address",
-            &main_falgs.addr, PPP_C_FLAGS_TYPE_STRING))
+            &main_falgs.addr, PPP_C_FLAGS_TYPE_STRING,
+            &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
 
     main_falgs.port = 80;
-    if (err = ppp_c_flags_add_flag(
+    if (!ppp_c_flags_add_flag(
             root,
             "port", 'p',
             "TCP bind port",
-            &main_falgs.port, PPP_C_FLAGS_TYPE_UINT))
+            &main_falgs.port, PPP_C_FLAGS_TYPE_UINT64,
+            &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
 
     main_falgs.protocol = -1;
-    if (err = ppp_c_flags_add_flag(
+    if (!ppp_c_flags_add_flag(
             root,
             "protocol", 'P',
             "Communication protocol version used",
-            &main_falgs.protocol, PPP_C_FLAGS_TYPE_INT))
+            &main_falgs.protocol, PPP_C_FLAGS_TYPE_INT64,
+            &err))
+    {
+        printf("Add flags fail: %s\n", ppp_c_flags_error(err));
+        goto FAIL;
+    }
+
+    main_falgs.limit = 0.8;
+    if (!ppp_c_flags_add_flag(
+            root,
+            "limit", 'l',
+            "CPU maximum usage",
+            &main_falgs.limit, PPP_C_FLAGS_TYPE_FLOAT64,
+            &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
@@ -99,10 +116,15 @@ int main(int argc, char **argv)
     ppp_c_flags_add_command(root, "dd12", "asdad", 0, 0, 0);
 
     // Parse and execute commands
+    int handler_result = 0;
     err = ppp_c_flags_execute(
         root,
         argc - 1, argv + 1, // Remove program startup path
-        1, 0);
+        1, &handler_result);
+    if (handler_result && !err)
+    {
+        err = handler_result;
+    }
 FAIL:
     // Clean up resources used by commands
     ppp_c_flags_command_destroy(root);

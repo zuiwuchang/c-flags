@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.json": "jsonc",
-        "listener.h": "c"
+        "listener.h": "c",
+        "errno.h": "c"
     }
 }
