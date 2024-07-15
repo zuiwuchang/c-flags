@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     // Create flags for commands
     if (err = ppp_c_flags_add_flag(
             root,
-            "debug", 0, // 0 not use short flags
+            "debug", 'd', // 0 not use short flags
             "Run in debug mode",
             &main_falgs.debug, PPP_C_FLAGS_TYPE_BOOL // Bind flags to memory for the parser to store parsed values
             ))
@@ -61,6 +61,8 @@ int main(int argc, char **argv)
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
+
+    main_falgs.addr = "127.0.0.1"; // Set default value ​​for bind parameters
     if (err = ppp_c_flags_add_flag(
             root,
             "addr", 'a', // 'a' as flags short name, "-a xxx" "-a=xxx" "-axxx"
@@ -70,7 +72,8 @@ int main(int argc, char **argv)
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
-    main_falgs.addr = "127.0.0.1"; // Set default value ​​for bind parameters
+
+    main_falgs.port = 80;
     if (err = ppp_c_flags_add_flag(
             root,
             "port", 'p',
@@ -80,7 +83,8 @@ int main(int argc, char **argv)
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
-    main_falgs.port = 80;
+
+    main_falgs.protocol = -1;
     if (err = ppp_c_flags_add_flag(
             root,
             "protocol", 'P',
@@ -90,7 +94,6 @@ int main(int argc, char **argv)
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
-    main_falgs.protocol = -1;
 
     ppp_c_flags_add_command(root, "xx", "abc", 0, 0, 0);
     ppp_c_flags_add_command(root, "dd12", "asdad", 0, 0, 0);

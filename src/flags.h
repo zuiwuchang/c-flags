@@ -18,6 +18,7 @@
 #define PPP_C_FLAGS_ERROR_MALLOC_COMMAND 11
 #define PPP_C_FLAGS_ERROR_MALLOC_ARGV 12
 #define PPP_C_FLAGS_ERROR_INVALID_ARGUMENT 13
+
 /**
  * Get error string information
  */
@@ -33,12 +34,22 @@ const char *ppp_c_flags_error(int err);
 #define PPP_C_FLAGS_BOOL uint8_t
 #define PPP_C_FLAGS_STRING const char *
 
+typedef struct
+{
+    uint8_t _type;
+    void *_p;
+    size_t _cap;
+    size_t _len;
+} ppp_c_flags_array_t;
+
 struct ppp_c_flags_flag
 {
     // next flag
     struct ppp_c_flags_flag *_next;
     void *_value;
     uint8_t _type;
+
+    ppp_c_flags_array_t _default;
 
     const char *_name;
     size_t _name_len;
@@ -69,6 +80,35 @@ typedef int (*ppp_c_flags_command_handler_f)(ppp_c_flags_command_t *command, int
  * Returns the name of the filepath, usually using ppp_c_flags_base_name(argv[0]) to create the root command
  */
 const char *ppp_c_flags_base_name(const char *filepath);
+
+/**
+ * ParseUint64 function ported from golang standard library
+ * ok: return 0;
+ * overflow: return 1;
+ * syntax: return -1;
+ */
+int ppp_c_flags_parse_uint64(
+    const char *s, size_t s_len,
+    int base, int bit_size,
+    uint64_t *output);
+/**
+ * ParseInt64 function ported from golang standard library
+ * ok: return 0;
+ * overflow: return 1;
+ * syntax: return -1;
+ */
+int ppp_c_flags_parse_int64(
+    const char *s, size_t s_len,
+    int base, int bit_size,
+    int64_t *output);
+/**
+ * ParseBool function ported from golang standard library
+ * case "1", "t", "T", "true", "TRUE", "True": return 1;
+ * case "0", "f", "F", "false", "FALSE", "False": return 0;
+ * elsecase return -1;
+ */
+int ppp_c_flags_parse_bool(const char *s, const size_t s_len);
+
 /**
  * Set how to allocate and release memory
  */
@@ -143,22 +183,5 @@ int ppp_c_flags_execute(
     ppp_c_flags_command_t *root,
     int argc, char **argv,
     uint8_t allow_unknow, int *handler_result);
-/**
- * ok: return 0;
- * overflow: return 1;
- * syntax: return -1;
- */
-int ppp_c_flags_parse_uint64(const char *s, size_t s_len, uint64_t *output);
-/**
- * ok: return 0;
- * overflow: return 1;
- * syntax: return -1;
- */
-int ppp_c_flags_parse_int64(const char *s, size_t s_len, int64_t *output);
-/**
- * case "1", "t", "T", "true", "TRUE", "True": return 1;
- * case "0", "f", "F", "false", "FALSE", "False": return 0;
- * elsecase return -1;
- */
-int ppp_c_flags_parse_bool(const char *s, const size_t s_len);
+
 #endif

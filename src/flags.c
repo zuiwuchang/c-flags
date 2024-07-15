@@ -6,6 +6,8 @@
 #define PPP_C_FLAGS_STATE_FLAGS 1
 #define PPP_C_FLAGS_STATE_FLAGS_SHORT 2
 
+#define PPP_C_FLAGS_LOGER(c) (c | ('x' - 'X'))
+
 static ppp_c_flags_malloc_f ppp_c_flags_malloc = malloc;
 static ppp_c_flags_free_f ppp_c_flags_free = free;
 static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command);
@@ -60,6 +62,325 @@ const char *ppp_c_flags_base_name(const char *filepath)
         }
     }
     return filepath;
+}
+
+// underscoreOK reports whether the underscores in s are allowed.
+// Checking them in this one function lets all the parsers skip over them simply.
+// Underscore must appear only between digits or between a base prefix and a digit.
+uint8_t ppp_c_flags_underscore_ok(const char *s, size_t s_len)
+{
+    // saw tracks the last character (class) we saw:
+    // ^ for beginning of number,
+    // 0 for a digit or base prefix,
+    // _ for an underscore,
+    // ! for none of the above.
+    char saw = '^';
+    size_t i = 0;
+
+    // Optional sign.
+    if (s_len >= 1 && (s[0] == '-' || s[0] == '+'))
+    {
+        s++;
+        s_len--;
+    }
+
+    // Optional base prefix.
+    uint8_t hex = 0;
+    if (s_len >= 2 && s[0] == '0')
+    {
+        switch (PPP_C_FLAGS_LOGER(s[1]))
+        {
+        case 'x':
+            hex = 1;
+        case 'b':
+        case 'o':
+            i = 2;
+            saw = '0';
+            break;
+        }
+    }
+
+    // Number proper.
+    for (; i < s_len; i++)
+    {
+        // Digits are always okay.
+        if ('0' <= s[i] && s[i] <= '9' || hex && 'a' <= PPP_C_FLAGS_LOGER(s[i]) && PPP_C_FLAGS_LOGER(s[i]) <= 'f')
+        {
+            saw = '0';
+            continue;
+        }
+        // Underscore must follow digit.
+        if (s[i] == '_')
+        {
+            if (saw != '0')
+            {
+                return 0;
+            }
+            saw = '_';
+            continue;
+        }
+        // Underscore must also be followed by digit.
+        if (saw == '_')
+        {
+            return 0;
+        }
+        // Saw non-digit, non-underscore.
+        saw = '!';
+    }
+    return saw != '_' ? 1 : 0;
+}
+
+int ppp_c_flags_parse_uint64(
+    const char *s, size_t s_len,
+    int base, int bit_size,
+    uint64_t *output)
+{
+    if (!s || !s_len)
+    {
+        return -1;
+    }
+    uint8_t base0 = base == 0;
+    const char *s0 = s;
+    size_t s0_len = s_len;
+    if (2 <= base && base <= 36)
+    {
+    }
+    else if (!base)
+    {
+        base = 10;
+        if (s[0] == '0')
+        {
+            if (s_len >= 3)
+            {
+                switch (PPP_C_FLAGS_LOGER(s[1]))
+                {
+                case 'b':
+                    base = 2;
+                    s += 2;
+                    s_len -= 2;
+                    break;
+                case 'o':
+                    base = 8;
+                    s += 2;
+                    s_len -= 2;
+                    break;
+                case 'x':
+                    base = 16;
+                    s += 2;
+                    s_len -= 2;
+                    break;
+                default:
+                    base = 8;
+                    s++;
+                    s_len--;
+                    break;
+                }
+            }
+            else
+            {
+                base = 8;
+                s++;
+                s_len--;
+            }
+        }
+    }
+    else
+    {
+        return -1;
+    }
+    if (!bit_size)
+    {
+        bit_size = 64;
+    }
+    else if (bit_size < 0 || bit_size > 64)
+    {
+        return -1;
+    }
+    // Cutoff is the smallest number such that cutoff*base > maxUint64.
+    // Use compile-time constants for common cases.
+    uint64_t cutoff = 18446744073709551615UL;
+    switch (base)
+    {
+    case 10:
+        cutoff = cutoff / 10 + 1;
+        break;
+    case 16:
+        cutoff = cutoff / 16 + 1;
+        break;
+    default:
+        cutoff = cutoff / base + 1;
+        break;
+    }
+    uint64_t maxVal = 1;
+    maxVal <<= bit_size;
+    maxVal = -1;
+
+    uint8_t underscores = 0;
+    uint64_t n = 0, n1;
+    uint8_t c, d;
+    for (size_t i = 0; i < s_len; i++)
+    {
+        c = s[i];
+        if (c == '_' && base0)
+        {
+            underscores = 1;
+            continue;
+        }
+        else if ('0' <= c && c <= '9')
+        {
+            d = c - '0';
+        }
+        else
+        {
+            d = PPP_C_FLAGS_LOGER(c);
+            if ('a' <= d && d <= 'z')
+            {
+                d -= 'a';
+                d += 10;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        if (d >= base)
+        {
+            return -1;
+        }
+
+        if (n >= cutoff)
+        {
+            // n*base overflows
+            if (output)
+            {
+                *output = maxVal;
+            }
+            return 1;
+        }
+        n *= base;
+
+        n1 = n + d;
+        if (n1 < n || n1 > maxVal)
+        {
+            // n+d overflows
+            if (output)
+            {
+                *output = maxVal;
+            }
+            return 1;
+        }
+        n = n1;
+    }
+
+    if (underscores && !ppp_c_flags_underscore_ok(s0, s0_len))
+    {
+        return -1;
+    }
+    if (output)
+    {
+        *output = n;
+    }
+    return 0;
+}
+
+int ppp_c_flags_parse_int64(
+    const char *s, size_t s_len,
+    int base, int bit_size,
+    int64_t *output)
+{
+    if (!s || !s_len)
+    {
+        return -1;
+    }
+    // Pick off leading sign.
+    const char *s0 = s;
+    size_t s0_len = s_len;
+    uint8_t neg = 0;
+    switch (s[0])
+    {
+    case '-':
+        neg = 1;
+    case '+':
+        s++;
+        s_len--;
+        break;
+    }
+
+    // Convert unsigned and check range.
+    uint64_t un = 0;
+    int err = ppp_c_flags_parse_uint64(s, s_len, base, bit_size, &un);
+    if (err && err != 1)
+    {
+        return err;
+    }
+    if (bit_size == 0)
+    {
+        bit_size = 64;
+    }
+    uint64_t cutoff = 1;
+    cutoff <<= (bit_size - 1);
+
+    if (!neg && un >= cutoff)
+    {
+        if (output)
+        {
+            *output = cutoff - 1;
+        }
+        return 1;
+    }
+    if (neg && un > cutoff)
+    {
+        if (output)
+        {
+            *output = -(int64_t)(cutoff);
+        }
+        return 1;
+    }
+    if (output)
+    {
+        *output = un;
+        if (neg)
+        {
+            *output = -*output;
+        }
+    }
+    return 0;
+}
+int ppp_c_flags_parse_bool(const char *s, const size_t s_len)
+{
+    switch (s_len)
+    {
+    case 1:
+        switch (s[0])
+        {
+        case '1':
+        case 't':
+        case 'T':
+            return 1;
+        case '0':
+        case 'f':
+        case 'F':
+            return 0;
+        }
+        break;
+    case 4:
+        if (!memcmp(s, "true", 4) ||
+            !memcmp(s, "TRUE", 4) ||
+            !memcmp(s, "True", 4))
+        {
+            return 1;
+        }
+        break;
+    case 5:
+        if (!memcmp(s, "false", 5) ||
+            !memcmp(s, "FALSE", 5) ||
+            !memcmp(s, "False", 5))
+        {
+            return 0;
+        }
+        break;
+    }
+    return -1;
 }
 void ppp_c_flags_alloctor(ppp_c_flags_malloc_f m, ppp_c_flags_free_f f)
 {
@@ -351,7 +672,25 @@ int ppp_c_flags_add_flag_with_len(
     {
         return PPP_C_FLAGS_ERROR_MALLOC_FLAG;
     }
-    flag->_next = 0;
+    memset(flag, 0, sizeof(struct ppp_c_flags_flag));
+    // flag->_next = 0;
+
+    void *p = &flag->_default;
+    switch (value_type)
+    {
+    case PPP_C_FLAGS_TYPE_INT:
+        *(PPP_C_FLAGS_INT *)p = *(PPP_C_FLAGS_INT *)value;
+        break;
+    case PPP_C_FLAGS_TYPE_UINT:
+        *(PPP_C_FLAGS_UINT *)p = *(PPP_C_FLAGS_UINT *)value;
+        break;
+    case PPP_C_FLAGS_TYPE_BOOL:
+        *(PPP_C_FLAGS_BOOL *)p = *(PPP_C_FLAGS_BOOL *)value;
+        break;
+    case PPP_C_FLAGS_TYPE_STRING:
+        *(PPP_C_FLAGS_STRING *)p = *(PPP_C_FLAGS_STRING *)value;
+        break;
+    }
 
     flag->_name = name;
     flag->_name_len = name_len;
@@ -547,28 +886,26 @@ static void ppp_c_flags_print_flag(
 }
 static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
 {
-    if (!flag->_value)
-    {
-        return;
-    }
     if (flag->_describe && !ppp_c_flags_is_delimiter(flag->_describe[0]))
     {
         putchar(' ');
     }
+    void *p = &flag->_default;
+
     switch (flag->_type)
     {
     case PPP_C_FLAGS_TYPE_INT:
     {
-        int64_t val = *(int64_t *)flag->_value;
+        PPP_C_FLAGS_INT val = *(PPP_C_FLAGS_INT *)p;
         if (val)
         {
-            printf("<default: %ld>", val);
+            printf("<value: %ld>", val);
         }
     }
     break;
     case PPP_C_FLAGS_TYPE_UINT:
     {
-        uint64_t val = *(uint64_t *)flag->_value;
+        PPP_C_FLAGS_UINT val = *(PPP_C_FLAGS_UINT *)p;
         if (val)
         {
             printf("<default: %lu>", val);
@@ -577,8 +914,7 @@ static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
     break;
     case PPP_C_FLAGS_TYPE_BOOL:
     {
-        uint8_t val = *(uint8_t *)flag->_value;
-        if (val)
+        if (*(PPP_C_FLAGS_BOOL *)p)
         {
             printf("<default: true>");
         }
@@ -587,7 +923,7 @@ static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
     // case PPP_C_FLAGS_TYPE_STRING:
     default:
     {
-        const char *val = *(char **)flag->_value;
+        PPP_C_FLAGS_STRING val = *(PPP_C_FLAGS_STRING *)p;
         if (val && val[0] != 0)
         {
             printf("<default: %s>", val);
@@ -787,7 +1123,7 @@ static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, st
 {
     if (PPP_C_FLAGS_TYPE_BOOL == flag->_type)
     {
-        *(uint8_t *)flag->_value = 1;
+        *(PPP_C_FLAGS_BOOL *)flag->_value = 1;
         args->i++;
         args->state = PPP_C_FLAGS_STATE_NONE;
         return 0;
@@ -806,10 +1142,14 @@ static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, st
         return 1;
     }
     args->s = args->argv[args->i + 1];
+
     switch (flag->_type)
     {
     case PPP_C_FLAGS_TYPE_INT:
-        if (ppp_c_flags_parse_int64(args->s, strlen(args->s), flag->_value))
+        if (ppp_c_flags_parse_int64(
+                args->s, strlen(args->s),
+                0, 0,
+                flag->_value))
         {
             if (isshort)
             {
@@ -824,7 +1164,10 @@ static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, st
         }
         break;
     case PPP_C_FLAGS_TYPE_UINT:
-        if (ppp_c_flags_parse_uint64(args->s, strlen(args->s), flag->_value))
+        if (ppp_c_flags_parse_uint64(
+                args->s, strlen(args->s),
+                0, 0,
+                flag->_value))
         {
             if (isshort)
             {
@@ -840,7 +1183,7 @@ static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, st
         break;
     // case PPP_C_FLAGS_TYPE_STRING:
     default:
-        *(uint8_t **)flag->_value = args->s;
+        *(PPP_C_FLAGS_STRING *)flag->_value = args->s;
         break;
     }
     args->i += 2;
@@ -868,7 +1211,10 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
     switch (flag->_type)
     {
     case PPP_C_FLAGS_TYPE_INT:
-        if (ppp_c_flags_parse_int64(args->s, args->s_len, flag->_value))
+        if (ppp_c_flags_parse_int64(
+                args->s, args->s_len,
+                0, 0,
+                flag->_value))
         {
             if (isshort)
             {
@@ -883,7 +1229,10 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
         }
         break;
     case PPP_C_FLAGS_TYPE_UINT:
-        if (ppp_c_flags_parse_uint64(args->s, args->s_len, flag->_value))
+        if (ppp_c_flags_parse_uint64(
+                args->s, args->s_len,
+                0, 0,
+                flag->_value))
         {
             if (isshort)
             {
@@ -901,10 +1250,10 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
         switch (ppp_c_flags_parse_bool(args->s, args->s_len))
         {
         case 0:
-            *(uint8_t *)flag->_value = 0;
+            *(PPP_C_FLAGS_BOOL *)flag->_value = 0;
             break;
         case 1:
-            *(uint8_t *)flag->_value = 1;
+            *(PPP_C_FLAGS_BOOL *)flag->_value = 1;
             return 1;
         default:
             if (isshort)
@@ -920,7 +1269,7 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
         }
         break;
     default:
-        *(uint8_t **)flag->_value = args->s;
+        *(PPP_C_FLAGS_STRING *)flag->_value = args->s;
         break;
     }
     args->i++;
@@ -965,7 +1314,7 @@ static int ppp_c_flags_next_flags(ppp_c_flags_execute_args_t *args)
                 return ppp_c_flags_next_flags_set_value(args, flag, 0);
             }
             else if (args->s_len > flag->_name_len &&
-                     args->s[args->s_len] == '=' &&
+                     args->s[flag->_name_len] == '=' &&
                      !memcmp(args->s, flag->_name, flag->_name_len))
             {
                 return ppp_c_flags_next_flags_set(args, flag, 0);
@@ -1030,8 +1379,9 @@ static int ppp_c_flags_next_short(ppp_c_flags_execute_args_t *args)
                     }
                     else if (flag->_type == PPP_C_FLAGS_TYPE_BOOL)
                     {
-                        args->i++;
-                        args->state = PPP_C_FLAGS_STATE_NONE;
+                        args->s++;
+                        args->s_len--;
+                        *(PPP_C_FLAGS_BOOL *)(flag->_value) = 1;
                         args->short_input = 1;
                         return 0;
                     }
@@ -1094,48 +1444,4 @@ int ppp_c_flags_execute(
         }
     }
     return args.err;
-}
-int ppp_c_flags_parse_uint64(const char *s, size_t s_len, uint64_t *output)
-{
-    return 0;
-}
-int ppp_c_flags_parse_int64(const char *s, size_t s_len, int64_t *output)
-{
-    return 0;
-}
-int ppp_c_flags_parse_bool(const char *s, const size_t s_len)
-{
-    switch (s_len)
-    {
-    case 1:
-        switch (s[0])
-        {
-        case '1':
-        case 't':
-        case 'T':
-            return 1;
-        case '0':
-        case 'f':
-        case 'F':
-            return 0;
-        }
-        break;
-    case 4:
-        if (!memcmp(s, "true", 4) ||
-            !memcmp(s, "TRUE", 4) ||
-            !memcmp(s, "True", 4))
-        {
-            return 1;
-        }
-        break;
-    case 5:
-        if (!memcmp(s, "false", 5) ||
-            !memcmp(s, "FALSE", 5) ||
-            !memcmp(s, "False", 5))
-        {
-            return 0;
-        }
-        break;
-    }
-    return -1;
 }
