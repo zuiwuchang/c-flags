@@ -8,4 +8,9 @@
   "directory": "/home/dev/project/cc/github/c-flags",
   "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/flags.c.o", "src/flags.c"],
   "file": "src/flags.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/value.c.o", "src/value.c"],
+  "file": "src/value.c"
 }]

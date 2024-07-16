@@ -1,5 +1,5 @@
-#ifndef PPP_C_FLAGS__H
-#define PPP_C_FLAGS__H
+#ifndef PPP_C_FLAGS__FLAGS_H
+#define PPP_C_FLAGS__FLAGS_H
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -27,14 +27,28 @@
 const char *ppp_c_flags_error(int err);
 
 #define PPP_C_FLAGS_TYPE_BOOL 1
-#define PPP_C_FLAGS_TYPE_INT64 2
-#define PPP_C_FLAGS_TYPE_UINT64 3
-#define PPP_C_FLAGS_TYPE_FLOAT64 4
-#define PPP_C_FLAGS_TYPE_STRING 5
+#define PPP_C_FLAGS_TYPE_INT8 2
+#define PPP_C_FLAGS_TYPE_INT16 3
+#define PPP_C_FLAGS_TYPE_INT32 4
+#define PPP_C_FLAGS_TYPE_INT64 5
+#define PPP_C_FLAGS_TYPE_UINT8 6
+#define PPP_C_FLAGS_TYPE_UINT16 7
+#define PPP_C_FLAGS_TYPE_UINT32 8
+#define PPP_C_FLAGS_TYPE_UINT64 9
+#define PPP_C_FLAGS_TYPE_FLOAT32 10
+#define PPP_C_FLAGS_TYPE_FLOAT64 11
+#define PPP_C_FLAGS_TYPE_STRING 12
 
 #define PPP_C_FLAGS_BOOL uint8_t
+#define PPP_C_FLAGS_INT8 int8_t
+#define PPP_C_FLAGS_INT16 int16_t
+#define PPP_C_FLAGS_INT32 int32_t
 #define PPP_C_FLAGS_INT64 int64_t
+#define PPP_C_FLAGS_UINT8 uint8_t
+#define PPP_C_FLAGS_UINT16 uint16_t
+#define PPP_C_FLAGS_UINT32 uint32_t
 #define PPP_C_FLAGS_UINT64 uint64_t
+#define PPP_C_FLAGS_FLOAT32 float
 #define PPP_C_FLAGS_FLOAT64 double
 #define PPP_C_FLAGS_STRING const char *
 

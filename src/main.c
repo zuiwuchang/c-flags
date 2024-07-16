@@ -1,6 +1,8 @@
 #include "flags.h"
+#include "value.h"
 #include <stdio.h>
 #include <string.h>
+
 // define a struct for command's flags
 typedef struct
 {
@@ -45,8 +47,8 @@ int main(int argc, char **argv)
     ppp_c_flags_command_t *root = ppp_c_flags_command_create(
         ppp_c_flags_base_name(argv[0]),
         "c-flags example",
-        root_handler,
-        &main_falgs, &err);
+        root_handler, &main_falgs,
+        &err);
     if (!root)
     {
         printf("Create root command fail: %s\n", ppp_c_flags_error(err));
@@ -111,8 +113,11 @@ int main(int argc, char **argv)
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         goto FAIL;
     }
-
-    ppp_c_flags_add_command(root, "xx", "abc", 0, 0, 0);
+    value_flags_t value_flags = {0};
+    if (init_value_command(root, &value_flags))
+    {
+        goto FAIL;
+    }
     ppp_c_flags_add_command(root, "dd12", "asdad", 0, 0, 0);
 
     // Parse and execute commands

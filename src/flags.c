@@ -37,6 +37,91 @@ static ppp_c_flags_flag_handler_t ppp_c_flags_handler_bool = {
     .print_default = ppp_c_flags_handler_bool_print_default,
     .set_flag = ppp_c_flags_handler_bool_set_flag,
 };
+static void ppp_c_flags_handler_int8_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_INT8 val = *(PPP_C_FLAGS_INT8 *)(&flag->_default);
+    if (val)
+    {
+        printf("<value: %d>", val);
+    }
+}
+static int ppp_c_flags_handler_int8_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    int64_t v0;
+    int err = ppp_c_flags_parse_int64(
+        s, s_len,
+        0, 8,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(int8_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int8 = {
+    .name = "int8",
+    .name_len = 4,
+    .print_default = ppp_c_flags_handler_int8_print_default,
+    .set_flag = ppp_c_flags_handler_int8_set_flag,
+};
+static void ppp_c_flags_handler_int16_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_INT16 val = *(PPP_C_FLAGS_INT16 *)(&flag->_default);
+    if (val)
+    {
+        printf("<value: %d>", val);
+    }
+}
+static int ppp_c_flags_handler_int16_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    int64_t v0;
+    int err = ppp_c_flags_parse_int64(
+        s, s_len,
+        0, 16,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(int16_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int16 = {
+    .name = "int16",
+    .name_len = 5,
+    .print_default = ppp_c_flags_handler_int16_print_default,
+    .set_flag = ppp_c_flags_handler_int16_set_flag,
+};
+static void ppp_c_flags_handler_int32_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_INT32 val = *(PPP_C_FLAGS_INT32 *)(&flag->_default);
+    if (val)
+    {
+        printf("<value: %d>", val);
+    }
+}
+static int ppp_c_flags_handler_int32_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    int64_t v0;
+    int err = ppp_c_flags_parse_int64(
+        s, s_len,
+        0, 32,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(int32_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int32 = {
+    .name = "int32",
+    .name_len = 5,
+    .print_default = ppp_c_flags_handler_int32_print_default,
+    .set_flag = ppp_c_flags_handler_int32_set_flag,
+};
+
 static void ppp_c_flags_handler_int64_print_default(ppp_c_flags_flag_t *flag)
 {
     PPP_C_FLAGS_INT64 val = *(PPP_C_FLAGS_INT64 *)(&flag->_default);
@@ -49,7 +134,7 @@ static int ppp_c_flags_handler_int64_set_flag(ppp_c_flags_flag_t *flag, const ch
 {
     return ppp_c_flags_parse_int64(
         s, s_len,
-        0, 0,
+        0, 64,
         flag->_value);
 }
 static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int64 = {
@@ -57,6 +142,90 @@ static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int64 = {
     .name_len = 5,
     .print_default = ppp_c_flags_handler_int64_print_default,
     .set_flag = ppp_c_flags_handler_int64_set_flag,
+};
+static void ppp_c_flags_handler_uint8_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_UINT8 val = *(PPP_C_FLAGS_UINT8 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %u>", val);
+    }
+}
+static int ppp_c_flags_handler_uint8_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    uint64_t v0;
+    int err = ppp_c_flags_parse_uint64(
+        s, s_len,
+        0, 8,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(uint8_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint8 = {
+    .name = "uint8",
+    .name_len = 5,
+    .print_default = ppp_c_flags_handler_uint8_print_default,
+    .set_flag = ppp_c_flags_handler_uint8_set_flag,
+};
+static void ppp_c_flags_handler_uint16_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_UINT32 val = *(PPP_C_FLAGS_UINT32 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %u>", val);
+    }
+}
+static int ppp_c_flags_handler_uint16_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    uint64_t v0;
+    int err = ppp_c_flags_parse_uint64(
+        s, s_len,
+        0, 16,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(uint16_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint16 = {
+    .name = "uint16",
+    .name_len = 6,
+    .print_default = ppp_c_flags_handler_uint16_print_default,
+    .set_flag = ppp_c_flags_handler_uint16_set_flag,
+};
+static void ppp_c_flags_handler_uint32_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_UINT32 val = *(PPP_C_FLAGS_UINT32 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %u>", val);
+    }
+}
+static int ppp_c_flags_handler_uint32_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    uint64_t v0;
+    int err = ppp_c_flags_parse_uint64(
+        s, s_len,
+        0, 32,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    *(uint32_t *)(flag->_value) = v0;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint32 = {
+    .name = "uint32",
+    .name_len = 6,
+    .print_default = ppp_c_flags_handler_uint32_print_default,
+    .set_flag = ppp_c_flags_handler_uint32_set_flag,
 };
 static void ppp_c_flags_handler_uint64_print_default(ppp_c_flags_flag_t *flag)
 {
@@ -70,7 +239,7 @@ static int ppp_c_flags_handler_uint64_set_flag(ppp_c_flags_flag_t *flag, const c
 {
     return ppp_c_flags_parse_uint64(
         s, s_len,
-        0, 0,
+        0, 64,
         flag->_value);
 }
 static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint64 = {
@@ -78,6 +247,43 @@ static ppp_c_flags_flag_handler_t ppp_c_flags_handler_uint64 = {
     .name_len = 6,
     .print_default = ppp_c_flags_handler_uint64_print_default,
     .set_flag = ppp_c_flags_handler_uint64_set_flag,
+};
+static void ppp_c_flags_handler_float32_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_FLOAT32 val = *(PPP_C_FLAGS_FLOAT32 *)(&flag->_default);
+    if (val)
+    {
+        printf("<default: %g>", val);
+    }
+}
+static int ppp_c_flags_handler_float32_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
+{
+    int err = errno;
+    errno = 0;
+    char *end = 0;
+    double v = strtod(s, &end);
+    if (errno)
+    {
+        return -1;
+    }
+    errno = err;
+    if (end && end[0] != 0)
+    {
+        return -1;
+    }
+    float f = v;
+    if (v != f)
+    {
+        return -1;
+    }
+    *(PPP_C_FLAGS_FLOAT32 *)flag->_value = v;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_float32 = {
+    .name = "float32",
+    .name_len = 7,
+    .print_default = ppp_c_flags_handler_float32_print_default,
+    .set_flag = ppp_c_flags_handler_float32_set_flag,
 };
 static void ppp_c_flags_handler_float64_print_default(ppp_c_flags_flag_t *flag)
 {
@@ -346,8 +552,7 @@ int ppp_c_flags_parse_uint64(
     }
     uint64_t maxVal = 1;
     maxVal <<= bit_size;
-    maxVal = -1;
-
+    maxVal--;
     uint8_t underscores = 0;
     uint64_t n = 0, n1;
     uint8_t c, d;
@@ -781,8 +986,15 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     switch (value_type)
     {
     case PPP_C_FLAGS_TYPE_BOOL:
+    case PPP_C_FLAGS_TYPE_INT8:
+    case PPP_C_FLAGS_TYPE_INT16:
+    case PPP_C_FLAGS_TYPE_INT32:
     case PPP_C_FLAGS_TYPE_INT64:
+    case PPP_C_FLAGS_TYPE_UINT8:
+    case PPP_C_FLAGS_TYPE_UINT16:
+    case PPP_C_FLAGS_TYPE_UINT32:
     case PPP_C_FLAGS_TYPE_UINT64:
+    case PPP_C_FLAGS_TYPE_FLOAT32:
     case PPP_C_FLAGS_TYPE_FLOAT64:
     case PPP_C_FLAGS_TYPE_STRING:
         break;
@@ -853,13 +1065,41 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
         *(PPP_C_FLAGS_BOOL *)p = *(PPP_C_FLAGS_BOOL *)value;
         flag->_handler = &ppp_c_flags_handler_bool;
         break;
+    case PPP_C_FLAGS_TYPE_INT8:
+        *(PPP_C_FLAGS_INT8 *)p = *(PPP_C_FLAGS_INT8 *)value;
+        flag->_handler = &ppp_c_flags_handler_int8;
+        break;
+    case PPP_C_FLAGS_TYPE_INT16:
+        *(PPP_C_FLAGS_INT16 *)p = *(PPP_C_FLAGS_INT16 *)value;
+        flag->_handler = &ppp_c_flags_handler_int16;
+        break;
+    case PPP_C_FLAGS_TYPE_INT32:
+        *(PPP_C_FLAGS_INT32 *)p = *(PPP_C_FLAGS_INT32 *)value;
+        flag->_handler = &ppp_c_flags_handler_int32;
+        break;
     case PPP_C_FLAGS_TYPE_INT64:
         *(PPP_C_FLAGS_INT64 *)p = *(PPP_C_FLAGS_INT64 *)value;
         flag->_handler = &ppp_c_flags_handler_int64;
         break;
+    case PPP_C_FLAGS_TYPE_UINT8:
+        *(PPP_C_FLAGS_UINT8 *)p = *(PPP_C_FLAGS_UINT8 *)value;
+        flag->_handler = &ppp_c_flags_handler_uint8;
+        break;
+    case PPP_C_FLAGS_TYPE_UINT16:
+        *(PPP_C_FLAGS_UINT16 *)p = *(PPP_C_FLAGS_UINT16 *)value;
+        flag->_handler = &ppp_c_flags_handler_uint16;
+        break;
+    case PPP_C_FLAGS_TYPE_UINT32:
+        *(PPP_C_FLAGS_UINT32 *)p = *(PPP_C_FLAGS_UINT32 *)value;
+        flag->_handler = &ppp_c_flags_handler_uint32;
+        break;
     case PPP_C_FLAGS_TYPE_UINT64:
         *(PPP_C_FLAGS_UINT64 *)p = *(PPP_C_FLAGS_UINT64 *)value;
         flag->_handler = &ppp_c_flags_handler_uint64;
+        break;
+    case PPP_C_FLAGS_TYPE_FLOAT32:
+        *(PPP_C_FLAGS_FLOAT32 *)p = *(PPP_C_FLAGS_FLOAT32 *)value;
+        flag->_handler = &ppp_c_flags_handler_float32;
         break;
     case PPP_C_FLAGS_TYPE_FLOAT64:
         *(PPP_C_FLAGS_FLOAT64 *)p = *(PPP_C_FLAGS_FLOAT64 *)value;
