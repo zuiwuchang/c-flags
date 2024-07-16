@@ -14,6 +14,7 @@ typedef struct
     PPP_C_FLAGS_UINT64 u64;
     PPP_C_FLAGS_FLOAT32 f32;
     PPP_C_FLAGS_FLOAT64 f64;
+    PPP_C_FLAGS_STRING s;
 } value_flags_t;
 
 int init_value_command(ppp_c_flags_command_t *parent, value_flags_t *flags);

@@ -7,10 +7,12 @@ static int value_handler(ppp_c_flags_command_t *command, int argc, char **argv, 
         "value_handler:\n"
         "  i8=%d\n  i16=%d\n  i32=%d\n  i64=%ld\n"
         "  u8=%u\n  u16=%u\n  u32=%u\n  u64=%lu\n"
-        "  f32=%g\n  f64=%g\n",
+        "  f32=%g\n  f64=%g\n"
+        "  s=%s\n",
         flags->i8, flags->i16, flags->i32, flags->i64,
         flags->u8, flags->u16, flags->u32, flags->u64,
-        flags->f32, flags->f64);
+        flags->f32, flags->f64,
+        flags->s);
     if (argc)
     {
         printf("args:\n");
@@ -129,6 +131,16 @@ int init_value_command(ppp_c_flags_command_t *parent, value_flags_t *flags)
             "f64", 0,
             "float64 [1.79769313486231570814527423731704356798070e+308,4.9406564584124654417656879286822137236505980e-324]",
             &flags->f64, PPP_C_FLAGS_TYPE_FLOAT64,
+            &err))
+    {
+        printf("Add flags fail: %s\n", ppp_c_flags_error(err));
+        return -1;
+    }
+    if (!ppp_c_flags_add_flag(
+            cmd,
+            "s", 0,
+            "any string",
+            &flags->s, PPP_C_FLAGS_TYPE_STRING,
             &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
