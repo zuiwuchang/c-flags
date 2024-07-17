@@ -588,18 +588,214 @@ int ppp_c_flags_parse_uint64(
     switch (base)
     {
     case 10:
-        cutoff = cutoff / 10 + 1;
+        cutoff /= 10;
         break;
     case 16:
-        cutoff = cutoff / 16 + 1;
+        cutoff /= 16;
         break;
     default:
-        cutoff = cutoff / base + 1;
+        cutoff /= base;
         break;
     }
+    cutoff++;
+
     uint64_t maxVal = 1;
-    maxVal <<= bit_size;
-    maxVal--;
+    switch (bit_size)
+    {
+    case 1:
+        maxVal = 1UL;
+        break;
+    case 2:
+        maxVal = 3UL;
+        break;
+    case 3:
+        maxVal = 7UL;
+        break;
+    case 4:
+        maxVal = 15UL;
+        break;
+    case 5:
+        maxVal = 31UL;
+        break;
+    case 6:
+        maxVal = 63UL;
+        break;
+    case 7:
+        maxVal = 127UL;
+        break;
+    case 8:
+        maxVal = 255UL;
+        break;
+    case 9:
+        maxVal = 511UL;
+        break;
+    case 10:
+        maxVal = 1023UL;
+        break;
+    case 11:
+        maxVal = 2047UL;
+        break;
+    case 12:
+        maxVal = 4095UL;
+        break;
+    case 13:
+        maxVal = 8191UL;
+        break;
+    case 14:
+        maxVal = 16383UL;
+        break;
+    case 15:
+        maxVal = 32767UL;
+        break;
+    case 16:
+        maxVal = 65535UL;
+        break;
+    case 17:
+        maxVal = 131071UL;
+        break;
+    case 18:
+        maxVal = 262143UL;
+        break;
+    case 19:
+        maxVal = 524287UL;
+        break;
+    case 20:
+        maxVal = 1048575UL;
+        break;
+    case 21:
+        maxVal = 2097151UL;
+        break;
+    case 22:
+        maxVal = 4194303UL;
+        break;
+    case 23:
+        maxVal = 8388607UL;
+        break;
+    case 24:
+        maxVal = 16777215UL;
+        break;
+    case 25:
+        maxVal = 33554431UL;
+        break;
+    case 26:
+        maxVal = 67108863UL;
+        break;
+    case 27:
+        maxVal = 134217727UL;
+        break;
+    case 28:
+        maxVal = 268435455UL;
+        break;
+    case 29:
+        maxVal = 536870911UL;
+        break;
+    case 30:
+        maxVal = 1073741823UL;
+        break;
+    case 31:
+        maxVal = 2147483647UL;
+        break;
+    case 32:
+        maxVal = 4294967295UL;
+        break;
+    case 33:
+        maxVal = 8589934591UL;
+        break;
+    case 34:
+        maxVal = 17179869183UL;
+        break;
+    case 35:
+        maxVal = 34359738367UL;
+        break;
+    case 36:
+        maxVal = 68719476735UL;
+        break;
+    case 37:
+        maxVal = 137438953471UL;
+        break;
+    case 38:
+        maxVal = 274877906943UL;
+        break;
+    case 39:
+        maxVal = 549755813887UL;
+        break;
+    case 40:
+        maxVal = 1099511627775UL;
+        break;
+    case 41:
+        maxVal = 2199023255551UL;
+        break;
+    case 42:
+        maxVal = 4398046511103UL;
+        break;
+    case 43:
+        maxVal = 8796093022207UL;
+        break;
+    case 44:
+        maxVal = 17592186044415UL;
+        break;
+    case 45:
+        maxVal = 35184372088831UL;
+        break;
+    case 46:
+        maxVal = 70368744177663UL;
+        break;
+    case 47:
+        maxVal = 140737488355327UL;
+        break;
+    case 48:
+        maxVal = 281474976710655UL;
+        break;
+    case 49:
+        maxVal = 562949953421311UL;
+        break;
+    case 50:
+        maxVal = 1125899906842623UL;
+        break;
+    case 51:
+        maxVal = 2251799813685247UL;
+        break;
+    case 52:
+        maxVal = 4503599627370495UL;
+        break;
+    case 53:
+        maxVal = 9007199254740991UL;
+        break;
+    case 54:
+        maxVal = 18014398509481983UL;
+        break;
+    case 55:
+        maxVal = 36028797018963967UL;
+        break;
+    case 56:
+        maxVal = 72057594037927935UL;
+        break;
+    case 57:
+        maxVal = 144115188075855871UL;
+        break;
+    case 58:
+        maxVal = 288230376151711743UL;
+        break;
+    case 59:
+        maxVal = 576460752303423487UL;
+        break;
+    case 60:
+        maxVal = 1152921504606846975UL;
+        break;
+    case 61:
+        maxVal = 2305843009213693951UL;
+        break;
+    case 62:
+        maxVal = 4611686018427387903UL;
+        break;
+    case 63:
+        maxVal = 9223372036854775807UL;
+        break;
+    case 64:
+        maxVal = 18446744073709551615UL;
+        break;
+    }
+
     uint8_t underscores = 0;
     uint64_t n = 0, n1;
     uint8_t c, d;
