@@ -2,6 +2,8 @@
     "files.associations": {
         "*.json": "jsonc",
         "listener.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "limits": "c",
+        "algorithm": "c"
     }
 }
