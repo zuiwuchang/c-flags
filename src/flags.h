@@ -75,6 +75,8 @@ typedef struct ppp_c_flags_flag
     const char *_describe;
 
     void *_handler;
+    // verify value, if return not 0 indicates that the value is illegal
+    int (*verify)(struct ppp_c_flags_flag *flag, uint8_t value_type, void *old_value, void *new_value);
 } ppp_c_flags_flag_t;
 
 typedef struct ppp_c_flags_command
