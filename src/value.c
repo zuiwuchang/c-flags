@@ -5,10 +5,12 @@ static int value_handler(ppp_c_flags_command_t *command, int argc, char **argv, 
     value_flags_t *flags = userdata;
     printf(
         "value_handler:\n"
+        "  b=%s\n"
         "  i8=%d\n  i16=%d\n  i32=%d\n  i64=%ld\n"
         "  u8=%u\n  u16=%u\n  u32=%u\n  u64=%lu\n"
         "  f32=%g\n  f64=%g\n"
         "  s=%s\n",
+        flags->b ? "true" : "false",
         flags->i8, flags->i16, flags->i32, flags->i64,
         flags->u8, flags->u16, flags->u32, flags->u64,
         flags->f32, flags->f64,
@@ -28,12 +30,22 @@ int init_value_command(ppp_c_flags_command_t *parent, value_flags_t *flags)
     int err = 0;
     ppp_c_flags_command_t *cmd = ppp_c_flags_add_command(
         parent,
-        "value", "value range test",
+        "value", "value range example",
         value_handler, flags,
         &err);
     if (!cmd)
     {
-        printf("Create root command fail: %s\n", ppp_c_flags_error(err));
+        printf("Create value command fail: %s\n", ppp_c_flags_error(err));
+        return -1;
+    }
+    if (!ppp_c_flags_add_flag(
+            cmd,
+            "bool", 'b',
+            "boolean [1,T,true,TRUE,0,F,false,False]",
+            &flags->b, PPP_C_FLAGS_TYPE_BOOL,
+            &err))
+    {
+        printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         return -1;
     }
     if (!ppp_c_flags_add_flag(

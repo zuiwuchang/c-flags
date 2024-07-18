@@ -132,7 +132,7 @@ typedef struct
     PPP_C_FLAGS_UINT32 *p;
     size_t cap;
     size_t len;
-} ppp_c_flags_uint43_array_t;
+} ppp_c_flags_uint32_array_t;
 typedef struct
 {
     uint8_t type;

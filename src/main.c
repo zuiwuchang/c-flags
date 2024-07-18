@@ -1,5 +1,6 @@
 #include "flags.h"
 #include "value.h"
+#include "value_array.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -118,7 +119,11 @@ int main(int argc, char **argv)
     {
         goto FAIL;
     }
-    ppp_c_flags_add_command(root, "dd12", "asdad", 0, 0, 0);
+    value_array_flags_t value_array_falgs = {0};
+    if (init_value_array_command(root, &value_array_falgs))
+    {
+        goto FAIL;
+    }
 
     // Parse and execute commands
     int handler_result = 0;

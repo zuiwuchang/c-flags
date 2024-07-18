@@ -102,16 +102,17 @@ static int ppp_c_flags_handler_bool_set_flag(ppp_c_flags_flag_t *flag, const cha
     {
     case 0:
         new_value = 0;
-        return 0;
+        break;
     case 1:
         new_value = 1;
-        return 0;
+        break;
     default:
         return -1;
     }
     int err;
     PPP_C_FLAGS_VERIFY_FLAG(flag, &new_value, err)
     *(PPP_C_FLAGS_BOOL *)flag->_value = new_value;
+    return 0;
 }
 static ppp_c_flags_flag_handler_t ppp_c_flags_handler_bool = {
     .name = "bool",
@@ -475,10 +476,10 @@ static int ppp_c_flags_handler_bool_array_set_flag(ppp_c_flags_flag_t *flag, con
     {
     case 0:
         new_value = 0;
-        return 0;
+        break;
     case 1:
         new_value = 1;
-        return 0;
+        break;
     default:
         return -1;
     }

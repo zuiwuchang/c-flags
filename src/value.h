@@ -4,6 +4,7 @@
 
 typedef struct
 {
+    PPP_C_FLAGS_BOOL b;
     PPP_C_FLAGS_INT8 i8;
     PPP_C_FLAGS_INT16 i16;
     PPP_C_FLAGS_INT32 i32;
