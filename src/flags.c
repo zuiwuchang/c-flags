@@ -21,8 +21,16 @@
 static ppp_c_flags_malloc_f ppp_c_flags_malloc = malloc;
 static ppp_c_flags_free_f ppp_c_flags_free = free;
 
-static int ppp_c_flags_gropw(ppp_c_flags_bool_array_t *p, size_t argc, size_t size)
+static int ppp_c_flags_gropw(ppp_c_flags_flag_t *flag, size_t argc, size_t size)
 {
+    ppp_c_flags_bool_array_t *p = flag->_value;
+    ppp_c_flags_bool_array_t temp = *p;
+    p = &temp;
+    if (!flag->_set_value)
+    {
+        p->len = 0;
+    }
+
     size_t n = 1;
     size_t available;
     size_t cap;
@@ -79,6 +87,10 @@ static int ppp_c_flags_gropw(ppp_c_flags_bool_array_t *p, size_t argc, size_t si
         p->p = ptr;
         p->cap = cap;
     }
+    p = flag->_value;
+    *p = temp;
+    flag->_set_value = 1;
+    return 0;
 }
 typedef struct
 {
@@ -451,22 +463,64 @@ static ppp_c_flags_flag_handler_t ppp_c_flags_handler_string = {
     .print_default = ppp_c_flags_handler_string_print_default,
     .set_flag = ppp_c_flags_handler_string_set_flag,
 };
+#define PPP_C_FLAGS_PRINT_DEFAULT_FUNC(flag, type, format) \
+    type *vals = (void *)(&flag->_default);                \
+    switch (vals->len)                                     \
+    {                                                      \
+    case 0:                                                \
+        break;                                             \
+    case 1:                                                \
+        printf("<default: [" format "]", vals->p[0]);      \
+        break;                                             \
+    default:                                               \
+        printf("<default: [");                             \
+        for (size_t i = 0; i < vals->len; i++)             \
+        {                                                  \
+            if (i)                                         \
+            {                                              \
+                printf("," format, vals->p[i]);            \
+            }                                              \
+            else                                           \
+            {                                              \
+                printf(format, vals->p[i]);                \
+            }                                              \
+        }                                                  \
+        printf("]>");                                      \
+        break;                                             \
+    }
 
 static void ppp_c_flags_handler_bool_array_print_default(ppp_c_flags_flag_t *flag)
 {
     PPP_C_FLAGS_BOOL_ARRAY *vals = &flag->_default;
-    if (vals->len)
+    switch (vals->len)
     {
+    case 0:
+        break;
+    case 1:
+        if (vals->p[0])
+        {
+            printf("<default: [true]");
+        }
+        else
+        {
+            printf("<default: [false]");
+        }
+        break;
+    default:
         printf("<default: [");
         for (size_t i = 0; i < vals->len; i++)
         {
             if (i)
             {
-                putchar(',');
+                printf(",%s", vals->p[i] ? "true" : "false");
             }
-            printf("%s", vals->p[i] ? "true" : "false");
+            else
+            {
+                printf("%s", vals->p[i] ? "true" : "false");
+            }
         }
         printf("]>");
+        break;
     }
 }
 static int ppp_c_flags_handler_bool_array_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len, size_t n)
@@ -485,12 +539,13 @@ static int ppp_c_flags_handler_bool_array_set_flag(ppp_c_flags_flag_t *flag, con
     }
     int err;
     PPP_C_FLAGS_VERIFY_FLAG(flag, &new_value, err)
-    PPP_C_FLAGS_BOOL_ARRAY *vals = (PPP_C_FLAGS_BOOL_ARRAY *)flag->_value;
-    if (ppp_c_flags_gropw(flag->_value, n, sizeof(PPP_C_FLAGS_BOOL)))
+    PPP_C_FLAGS_BOOL_ARRAY *vals = (void *)flag->_value;
+    if (ppp_c_flags_gropw(flag, n, sizeof(PPP_C_FLAGS_BOOL)))
     {
         return -1;
     }
     vals->p[vals->len++] = new_value;
+    return 0;
 }
 static ppp_c_flags_flag_handler_t ppp_c_flags_handler_bool_array = {
     .name = "[]bool",
@@ -498,36 +553,38 @@ static ppp_c_flags_flag_handler_t ppp_c_flags_handler_bool_array = {
     .print_default = ppp_c_flags_handler_bool_array_print_default,
     .set_flag = ppp_c_flags_handler_bool_array_set_flag,
 };
-// static void ppp_c_flags_handler_int8_print_default(ppp_c_flags_flag_t *flag)
-// {
-//     PPP_C_FLAGS_INT8 val = *(PPP_C_FLAGS_INT8 *)(&flag->_default);
-//     if (val)
-//     {
-//         printf("<value: %d>", val);
-//     }
-// }
-// static int ppp_c_flags_handler_int8_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len)
-// {
-//     int64_t v0;
-//     int err = ppp_c_flags_parse_int64(
-//         s, s_len,
-//         0, 8,
-//         &v0);
-//     if (err)
-//     {
-//         return err;
-//     }
-//     PPP_C_FLAGS_INT8 new_value = v0;
-//     PPP_C_FLAGS_VERIFY_FLAG(flag, &new_value, err)
-//     *(PPP_C_FLAGS_INT8 *)(flag->_value) = new_value;
-//     return 0;
-// }
-// static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int8 = {
-//     .name = "int8",
-//     .name_len = 4,
-//     .print_default = ppp_c_flags_handler_int8_print_default,
-//     .set_flag = ppp_c_flags_handler_int8_set_flag,
-// };
+
+static void ppp_c_flags_handler_int8_array_print_default(ppp_c_flags_flag_t *flag)
+{
+    PPP_C_FLAGS_PRINT_DEFAULT_FUNC(flag, PPP_C_FLAGS_INT8_ARRAY, "%d")
+}
+static int ppp_c_flags_handler_int8_array_set_flag(ppp_c_flags_flag_t *flag, const char *s, size_t s_len, size_t n)
+{
+    int64_t v0;
+    int err = ppp_c_flags_parse_int64(
+        s, s_len,
+        0, 8,
+        &v0);
+    if (err)
+    {
+        return err;
+    }
+    PPP_C_FLAGS_INT8 new_value = v0;
+    PPP_C_FLAGS_VERIFY_FLAG(flag, &new_value, err)
+    PPP_C_FLAGS_INT8_ARRAY *vals = (void *)flag->_value;
+    if (ppp_c_flags_gropw(flag, n, sizeof(PPP_C_FLAGS_BOOL)))
+    {
+        return -1;
+    }
+    vals->p[vals->len++] = new_value;
+    return 0;
+}
+static ppp_c_flags_flag_handler_t ppp_c_flags_handler_int8_array = {
+    .name = "[]int8",
+    .name_len = 6,
+    .print_default = ppp_c_flags_handler_int8_array_print_default,
+    .set_flag = ppp_c_flags_handler_int8_array_set_flag,
+};
 // static void ppp_c_flags_handler_int16_print_default(ppp_c_flags_flag_t *flag)
 // {
 //     PPP_C_FLAGS_INT16 val = *(PPP_C_FLAGS_INT16 *)(&flag->_default);
@@ -1517,9 +1574,34 @@ void ppp_c_flags_command_destroy(ppp_c_flags_command_t *c)
     // destroy flags
     struct ppp_c_flags_flag *flag = c->_flag;
     struct ppp_c_flags_flag *flag_next;
+    PPP_C_FLAGS_BOOL_ARRAY *arrs;
     while (flag)
     {
         flag_next = flag->_next;
+        switch (flag->_type)
+        {
+        case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
+        case PPP_C_FLAGS_TYPE_INT8_ARRAY:
+        case PPP_C_FLAGS_TYPE_INT16_ARRAY:
+        case PPP_C_FLAGS_TYPE_INT32_ARRAY:
+        case PPP_C_FLAGS_TYPE_INT64_ARRAY:
+        case PPP_C_FLAGS_TYPE_UINT8_ARRAY:
+        case PPP_C_FLAGS_TYPE_UINT16_ARRAY:
+        case PPP_C_FLAGS_TYPE_UINT32_ARRAY:
+        case PPP_C_FLAGS_TYPE_UINT64_ARRAY:
+        case PPP_C_FLAGS_TYPE_FLOAT32_ARRAY:
+        case PPP_C_FLAGS_TYPE_FLOAT64_ARRAY:
+        case PPP_C_FLAGS_TYPE_STRING_ARRAY:
+            arrs = flag->_value;
+            if (arrs->cap)
+            {
+                ppp_c_flags_free(arrs->p);
+                arrs->p = 0;
+                arrs->cap = 0;
+                arrs->len = 0;
+            }
+            break;
+        }
         ppp_c_flags_free(flag);
         flag = flag_next;
     }
@@ -1678,6 +1760,8 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     case PPP_C_FLAGS_TYPE_FLOAT32:
     case PPP_C_FLAGS_TYPE_FLOAT64:
     case PPP_C_FLAGS_TYPE_STRING:
+
+    case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
         break;
     default:
         if (err)
@@ -1789,6 +1873,11 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     case PPP_C_FLAGS_TYPE_STRING:
         *(PPP_C_FLAGS_STRING *)p = *(PPP_C_FLAGS_STRING *)value;
         flag->_handler = &ppp_c_flags_handler_string;
+        break;
+
+    case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
+        *(PPP_C_FLAGS_BOOL_ARRAY *)p = *(PPP_C_FLAGS_BOOL_ARRAY *)value;
+        flag->_handler = &ppp_c_flags_handler_bool_array;
         break;
     }
 
@@ -2167,11 +2256,13 @@ static int ppp_c_flags_next_none(ppp_c_flags_execute_args_t *args)
 }
 static int ppp_c_flags_next_flags_set_value(ppp_c_flags_execute_args_t *args, struct ppp_c_flags_flag *flag, uint8_t isshort)
 {
-    if (PPP_C_FLAGS_TYPE_BOOL == flag->_type)
+    switch (flag->_type)
     {
-        *(PPP_C_FLAGS_BOOL *)flag->_value = 1;
+    case PPP_C_FLAGS_TYPE_BOOL:
+    case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
         args->i++;
         args->state = PPP_C_FLAGS_STATE_NONE;
+        ((ppp_c_flags_flag_handler_t *)flag->_handler)->set_flag(flag, "1", 1, args->argc - args->i);
         return 0;
     }
     if (args->i + 1 >= args->argc)
@@ -2224,7 +2315,7 @@ static int ppp_c_flags_next_flags_set(ppp_c_flags_execute_args_t *args, struct p
         args->s_len--;
         break;
     }
-    if (((ppp_c_flags_flag_handler_t *)(flag->_handler))->set_flag(flag, args->s, args->s_len, args->argc - args->i))
+    if (((ppp_c_flags_flag_handler_t *)(flag->_handler))->set_flag(flag, args->s, args->s_len, args->argc - args->i - 1))
     {
         if (isshort)
         {
@@ -2345,16 +2436,17 @@ static int ppp_c_flags_next_short(ppp_c_flags_execute_args_t *args)
                     {
                         return ppp_c_flags_next_flags_set(args, flag, 1);
                     }
-                    else if (flag->_type == PPP_C_FLAGS_TYPE_BOOL)
+                    switch (flag->_type)
                     {
+                    case PPP_C_FLAGS_TYPE_BOOL:
+                    case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
                         args->s++;
                         args->s_len--;
-                        *(PPP_C_FLAGS_BOOL *)(flag->_value) = 1;
+                        ((ppp_c_flags_flag_handler_t *)flag->_handler)->set_flag(flag, "1", 1, args->argc - args->i);
                         args->short_input = 1;
                         return 0;
-                    }
-                    else
-                    {
+
+                    default:
                         return ppp_c_flags_next_flags_set(args, flag, 2);
                     }
                 }

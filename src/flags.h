@@ -26,6 +26,14 @@
  */
 const char *ppp_c_flags_error(int err);
 
+#define PPP_C_FLAGS_DEFINE_ARRAY(type, name) \
+    typedef struct                           \
+    {                                        \
+        type *p;                             \
+        size_t cap;                          \
+        size_t len;                          \
+    } ppp_c_flags_##name##_array_t;
+
 #define PPP_C_FLAGS_TYPE_BOOL 1
 #define PPP_C_FLAGS_TYPE_INT8 2
 #define PPP_C_FLAGS_TYPE_INT16 3
@@ -64,6 +72,7 @@ const char *ppp_c_flags_error(int err);
 #define PPP_C_FLAGS_FLOAT32 float
 #define PPP_C_FLAGS_FLOAT64 double
 #define PPP_C_FLAGS_STRING const char *
+
 #define PPP_C_FLAGS_BOOL_ARRAY ppp_c_flags_bool_array_t
 #define PPP_C_FLAGS_INT8_ARRAY ppp_c_flags_int8_array_t
 #define PPP_C_FLAGS_INT16_ARRAY ppp_c_flags_int16_array_t
@@ -76,97 +85,25 @@ const char *ppp_c_flags_error(int err);
 #define PPP_C_FLAGS_FLOAT32_ARRAY ppp_c_flags_float32_array_t
 #define PPP_C_FLAGS_FLOAT64_ARRAY ppp_c_flags_float64_array_t
 #define PPP_C_FLAGS_STRING_ARRAY ppp_c_flags_string_array_t
-
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_BOOL *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_bool_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_INT8 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_int8_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_INT16 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_int16_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_INT32 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_int32_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_INT64 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_int64_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_UINT8 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_uint8_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_UINT8 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_uint16_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_UINT32 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_uint32_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_UINT64 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_uint64_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_FLOAT32 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_float32_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_FLOAT64 *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_float64_array_t;
-typedef struct
-{
-    uint8_t type;
-    PPP_C_FLAGS_STRING *p;
-    size_t cap;
-    size_t len;
-} ppp_c_flags_string_array_t;
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_BOOL, bool);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_INT8, int8);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_INT16, int16);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_INT32, int32);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_INT64, int64);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_UINT8, uint8);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_UINT16, uint16);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_UINT32, uint32);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_UINT64, uint64);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_FLOAT32, float32);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_FLOAT64, float64);
+PPP_C_FLAGS_DEFINE_ARRAY(PPP_C_FLAGS_STRING, string);
 
 typedef struct ppp_c_flags_flag
 {
     // next flag
     struct ppp_c_flags_flag *_next;
     void *_value;
+    uint8_t _set_value;
     uint8_t _type;
 
     ppp_c_flags_bool_array_t _default;

@@ -4,6 +4,13 @@
         "listener.h": "c",
         "errno.h": "c",
         "limits": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "typeinfo": "c",
+        "array": "c",
+        "istream": "c",
+        "ostream": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }
