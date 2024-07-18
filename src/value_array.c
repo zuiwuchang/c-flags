@@ -76,23 +76,26 @@ int init_value_array_command(ppp_c_flags_command_t *parent, value_array_flags_t 
     if (!ppp_c_flags_add_flag(
             cmd,
             "bool", 'b',
-            "boolean",
+            0,
             &flags->b, PPP_C_FLAGS_TYPE_BOOL_ARRAY,
             &err))
     {
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         return -1;
     }
-    // if (!ppp_c_flags_add_flag(
-    //         cmd,
-    //         "i8", 0,
-    //         "int8 [-128,127]",
-    //         &flags->i8, PPP_C_FLAGS_TYPE_INT8,
-    //         &err))
-    // {
-    //     printf("Add flags fail: %s\n", ppp_c_flags_error(err));
-    //     return -1;
-    // }
+    static PPP_C_FLAGS_INT8 i8[] = {-128, 127};
+    flags->i8.p = i8;
+    flags->i8.len = sizeof(i8) / sizeof(PPP_C_FLAGS_INT8);
+    if (!ppp_c_flags_add_flag(
+            cmd,
+            "i8", 0,
+            0,
+            &flags->i8, PPP_C_FLAGS_TYPE_INT8_ARRAY,
+            &err))
+    {
+        printf("Add flags fail: %s\n", ppp_c_flags_error(err));
+        return -1;
+    }
     // if (!ppp_c_flags_add_flag(
     //         cmd,
     //         "i16", 0,

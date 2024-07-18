@@ -1762,6 +1762,17 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     case PPP_C_FLAGS_TYPE_STRING:
 
     case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
+    case PPP_C_FLAGS_TYPE_INT8_ARRAY:
+    case PPP_C_FLAGS_TYPE_INT16_ARRAY:
+    case PPP_C_FLAGS_TYPE_INT32_ARRAY:
+    case PPP_C_FLAGS_TYPE_INT64_ARRAY:
+    case PPP_C_FLAGS_TYPE_UINT8_ARRAY:
+    case PPP_C_FLAGS_TYPE_UINT16_ARRAY:
+    case PPP_C_FLAGS_TYPE_UINT32_ARRAY:
+    case PPP_C_FLAGS_TYPE_UINT64_ARRAY:
+    case PPP_C_FLAGS_TYPE_FLOAT32_ARRAY:
+    case PPP_C_FLAGS_TYPE_FLOAT64_ARRAY:
+    case PPP_C_FLAGS_TYPE_STRING_ARRAY:
         break;
     default:
         if (err)
@@ -1878,6 +1889,10 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag_with_len(
     case PPP_C_FLAGS_TYPE_BOOL_ARRAY:
         *(PPP_C_FLAGS_BOOL_ARRAY *)p = *(PPP_C_FLAGS_BOOL_ARRAY *)value;
         flag->_handler = &ppp_c_flags_handler_bool_array;
+        break;
+    case PPP_C_FLAGS_TYPE_INT8_ARRAY:
+        *(PPP_C_FLAGS_BOOL_ARRAY *)p = *(PPP_C_FLAGS_BOOL_ARRAY *)value;
+        flag->_handler = &ppp_c_flags_handler_int8_array;
         break;
     }
 
@@ -2065,14 +2080,7 @@ static void ppp_c_flags_print_flag(char *buf, size_t len, ppp_c_flags_flag_t *fl
         printf(buf, "bool");
     }
 }
-static void ppp_c_flags_print_default(struct ppp_c_flags_flag *flag)
-{
-    if (flag->_describe && !ppp_c_flags_is_delimiter(flag->_describe[0]))
-    {
-        putchar(' ');
-    }
-    ((ppp_c_flags_flag_handler_t *)(flag->_handler))->print_default(flag);
-}
+
 static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
 {
     size_t i;
@@ -2153,16 +2161,21 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
         {
             printf("  -%c, --", flag->_short_name);
             ppp_c_flags_print_flag(buf, min, flag);
+
             if (flag->_describe && !ppp_c_flags_is_delimiter(flag->_describe[0]))
             {
-
                 printf("   ");
                 for (i = 0; !ppp_c_flags_is_delimiter(flag->_describe[i]); i++)
                 {
                     putchar(flag->_describe[i]);
                 }
+                putchar(' ');
             }
-            ppp_c_flags_print_default(flag);
+            else
+            {
+                printf("   ");
+            }
+            ((ppp_c_flags_flag_handler_t *)(flag->_handler))->print_default(flag);
             putchar('\n');
         }
         else
@@ -2176,8 +2189,13 @@ static void ppp_c_flags_print_usage(ppp_c_flags_command_t *command)
                 {
                     putchar(flag->_describe[i]);
                 }
+                putchar(' ');
             }
-            ppp_c_flags_print_default(flag);
+            else
+            {
+                printf("   ");
+            }
+            ((ppp_c_flags_flag_handler_t *)(flag->_handler))->print_default(flag);
             putchar('\n');
         }
         flag = flag->_next;
