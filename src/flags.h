@@ -5,6 +5,21 @@
 
 #define PPP_C_FLAGS_VERSION 1
 
+#ifndef PPP_C_FLAGS_DISABLE_VERIFY
+#define PPP_C_FLAGS_DISABLE_VERIFY 0
+#endif
+
+#ifndef PPP_C_FLAGS_DISABLE_PRINT
+#define PPP_C_FLAGS_DISABLE_PRINT 0
+#endif
+
+#if PPP_C_FLAGS_DISABLE_VERIFY < 1
+#define __PPP_C_FLAGS_HAS_VERIFY 1
+#endif
+#if PPP_C_FLAGS_DISABLE_PRINT < 1
+#define __PPP_C_FLAGS_HAS_PRINT 1
+#endif
+
 #define PPP_C_FLAGS_ERROR_DUPLICATE_FLAG 1
 #define PPP_C_FLAGS_ERROR_DUPLICATE_FLAG_SHORT 2
 #define PPP_C_FLAGS_ERROR_DUPLICATE_COMMAND 3
@@ -114,8 +129,15 @@ typedef struct ppp_c_flags_flag
     const char *_describe;
 
     void *_handler;
-    // verify value, if return not 0 indicates that the value is illegal
+#ifdef __PPP_C_FLAGS_HAS_VERIFY
+    // Verify value, if return not 0 indicates that the value is illegal
     int (*verify)(struct ppp_c_flags_flag *flag, uint8_t value_type, void *old_value, void *new_value);
+#endif
+
+#ifdef __PPP_C_FLAGS_HAS_PRINT
+    // Used to set how to print values ​​on the console
+    int (*print)(struct ppp_c_flags_flag *flag, uint8_t value_type, void *value);
+#endif
 } ppp_c_flags_flag_t;
 
 typedef struct ppp_c_flags_command

@@ -1,37 +1,63 @@
 #include "value_array.h"
 #include <stdio.h>
-
-#define PRINT_FLAG_ARRAY(arrs, name, format)   \
-    if (arrs.len)                              \
+#define PRINT_FLAG_DEFAULT_ARRAY(arrs, format) \
+    for (size_t i = 0; i < arrs->len; i++)     \
     {                                          \
-        printf("  " #name "=[");               \
-        for (size_t i = 0; i < arrs.len; i++)  \
-        {                                      \
-            if (i)                             \
-                printf("," format, arrs.p[i]); \
-            else                               \
-                printf(format, arrs.p[i]);     \
-        }                                      \
-        puts("]");                             \
-    }                                          \
-    else                                       \
+        if (i)                                 \
+            printf(", " format, arrs->p[i]);   \
+        else                                   \
+            printf(format, arrs->p[i]);        \
+    }
+
+#define PRINT_FLAG_ARRAY(arrs, name, format)    \
+    if (arrs.len)                               \
+    {                                           \
+        printf("  " #name "=[");                \
+        for (size_t i = 0; i < arrs.len; i++)   \
+        {                                       \
+            if (i)                              \
+                printf(", " format, arrs.p[i]); \
+            else                                \
+                printf(format, arrs.p[i]);      \
+        }                                       \
+        puts("]");                              \
+    }                                           \
+    else                                        \
         puts("  " #name "=[]")
 
 #define ADD_ARRAY_FLAG_RANGE(cmd, err, type, arrs_type, name, arrs, min, max) \
     static type name[] = {min, max};                                          \
     arrs.p = name;                                                            \
     arrs.len = sizeof(name) / sizeof(type);                                   \
-    if (!ppp_c_flags_add_flag(                                                \
-            cmd,                                                              \
-            #name, 0,                                                         \
-            0,                                                                \
-            &arrs, arrs_type,                                                 \
-            &err))                                                            \
+    flag = ppp_c_flags_add_flag(                                              \
+        cmd,                                                                  \
+        #name, 0,                                                             \
+        0,                                                                    \
+        &arrs, arrs_type,                                                     \
+        &err);                                                                \
+    if (!flag)                                                                \
     {                                                                         \
         printf("Add flags " #name " fail: %s\n", ppp_c_flags_error(err));     \
         return -1;                                                            \
     }
-
+static int print_float_value(struct ppp_c_flags_flag *flag, uint8_t value_type, void *value)
+{
+    switch (value_type)
+    {
+    case PPP_C_FLAGS_TYPE_FLOAT32_ARRAY:
+    {
+        PPP_C_FLAGS_FLOAT32_ARRAY *arrs = value;
+        PRINT_FLAG_DEFAULT_ARRAY(arrs, "%g")
+    }
+    break;
+    case PPP_C_FLAGS_TYPE_FLOAT64_ARRAY:
+    {
+        PPP_C_FLAGS_FLOAT64_ARRAY *arrs = value;
+        PRINT_FLAG_DEFAULT_ARRAY(arrs, "%g")
+    }
+    break;
+    }
+}
 static int value_array_handler(ppp_c_flags_command_t *command, int argc, char **argv, void *userdata)
 {
     printf("value_array_handler:\n");
@@ -98,6 +124,7 @@ int init_value_array_command(ppp_c_flags_command_t *parent, value_array_flags_t 
         printf("Add flags fail: %s\n", ppp_c_flags_error(err));
         return -1;
     }
+    ppp_c_flags_flag_t *flag;
     ADD_ARRAY_FLAG_RANGE(
         cmd, err,
         PPP_C_FLAGS_INT8,
@@ -153,12 +180,14 @@ int init_value_array_command(ppp_c_flags_command_t *parent, value_array_flags_t 
         PPP_C_FLAGS_TYPE_FLOAT32_ARRAY,
         f32, flags->f32,
         3.40282346638528859811704183484516925440e+38, 1.401298464324817070923729583289916131280e-45)
+    flag->print = print_float_value;
     ADD_ARRAY_FLAG_RANGE(
         cmd, err,
         PPP_C_FLAGS_FLOAT64,
         PPP_C_FLAGS_TYPE_FLOAT64_ARRAY,
         f64, flags->f64,
         1.79769313486231570814527423731704356798070e+308, 4.9406564584124654417656879286822137236505980e-324)
+    flag->print = print_float_value;
 
     ADD_ARRAY_FLAG_RANGE(
         cmd, err,
@@ -166,5 +195,6 @@ int init_value_array_command(ppp_c_flags_command_t *parent, value_array_flags_t 
         PPP_C_FLAGS_TYPE_STRING_ARRAY,
         s, flags->s,
         "abc", "中文測試")
+
     return 0;
 }
