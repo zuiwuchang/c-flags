@@ -3,6 +3,21 @@
 #include <stdio.h>
 #include <errno.h>
 
+static char __ppp_c_flags_version[1 + 3 + 1 + 3 + 1 + 3] = {0};
+const char *ppp_c_flags_version()
+{
+    char *s = __ppp_c_flags_version;
+    if (!s[0])
+    {
+        uint32_t version = PPP_C_FLAGS_VERSION;
+        sprintf(s + 1,
+                "%3d.%3d.%3d",
+                (version / 1000 / 1000) % 1000,
+                (version / 1000) % 1000,
+                (version) % 1000);
+    }
+    return s + 1;
+}
 #define PPP_C_FLAGS_VERIFY_FLAG(flag, new_value, err)                   \
     if (flag->verify)                                                   \
     {                                                                   \

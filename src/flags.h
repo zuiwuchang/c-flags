@@ -37,6 +37,10 @@
 #define PPP_C_FLAGS_ERROR_UNKNOW_SHORT_FLAG 15
 
 /**
+ * Get version string
+*/
+const char *ppp_c_flags_version();
+/**
  * Get error string information
  */
 const char *ppp_c_flags_error(int err);
