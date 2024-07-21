@@ -73,9 +73,9 @@ After completing the above two steps, you need to inject them into the system. J
 
 # Examples
 
-* [src/exmaple/main.c](src/exmaple/main.c) a complete example
-* [src/exmaple/value.c](src/exmaple/value.c) demonstrates how to define subcommands and all supported underlying data types
-* [src/exmaple/value_array.c](src/exmaple/value_array.c) demonstrates how to define subcommands and all supported array types
+* [src/example/main.c](src/example/main.c) a complete example
+* [src/example/value.c](src/example/value.c) demonstrates how to define subcommands and all supported underlying data types
+* [src/example/value_array.c](src/example/value_array.c) demonstrates how to define subcommands and all supported array types
 
 # Create Command
 
