@@ -1,21 +1,51 @@
 [
 {
   "directory": "/home/dev/project/cc/github/c-flags",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/main.c.o", "src/main.c"],
-  "file": "src/main.c"
-},
-{
-  "directory": "/home/dev/project/cc/github/c-flags",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/flags.c.o", "src/flags.c"],
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/src/flags.c.o", "src/flags.c"],
   "file": "src/flags.c"
 },
 {
   "directory": "/home/dev/project/cc/github/c-flags",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/value.c.o", "src/value.c"],
-  "file": "src/value.c"
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/third_party_repo/cutest/CuTest.c.o", "third_party_repo/cutest/CuTest.c"],
+  "file": "third_party_repo/cutest/CuTest.c"
 },
 {
   "directory": "/home/dev/project/cc/github/c-flags",
-  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags/linux/x86_64/release/src/value_array.c.o", "src/value_array.c"],
-  "file": "src/value_array.c"
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/src/test/defines.c.o", "src/test/defines.c"],
+  "file": "src/test/defines.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/src/test/main.c.o", "src/test/main.c"],
+  "file": "src/test/main.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/src/test/tests.c.o", "src/test/tests.c"],
+  "file": "src/test/tests.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-test/linux/x86_64/release/src/test/strconv.c.o", "src/test/strconv.c"],
+  "file": "src/test/strconv.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-example/linux/x86_64/release/src/flags.c.o", "src/flags.c"],
+  "file": "src/flags.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-example/linux/x86_64/release/src/example/main.c.o", "src/example/main.c"],
+  "file": "src/example/main.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-example/linux/x86_64/release/src/example/value.c.o", "src/example/value.c"],
+  "file": "src/example/value.c"
+},
+{
+  "directory": "/home/dev/project/cc/github/c-flags",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-O3", "-std=c99", "-DNDEBUG", "-o", "build/.objs/c-flags-example/linux/x86_64/release/src/example/value_array.c.o", "src/example/value_array.c"],
+  "file": "src/example/value_array.c"
 }]

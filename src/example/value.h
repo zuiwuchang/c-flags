@@ -1,6 +1,6 @@
 #ifndef PPP_C_FLAGS__VALUE_H
 #define PPP_C_FLAGS__VALUE_H
-#include "flags.h"
+#include "../flags.h"
 
 typedef struct
 {

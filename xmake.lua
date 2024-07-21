@@ -4,9 +4,17 @@ add_rules("plugin.compile_commands.autoupdate", { outputdir = ".vscode" })
 
 set_languages("c99")
 
-target("c-flags")
+target("c-flags-example")
     set_kind("binary")
     add_files("src/*.c")
+    add_files("src/example/*.c")
+    set_basename("c-flags")
+
+target("c-flags-test")
+    set_kind("binary")
+    add_files("src/*.c")
+    add_files("third_party_repo/cutest/*.c")
+    add_files("src/test/*.c")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-static char __ppp_c_flags_version[1 + 3 + 1 + 3 + 1 + 3] = {0};
+static char __ppp_c_flags_version[1 + 3 + 1 + 3 + 1 + 3 + 1] = {0};
 const char *ppp_c_flags_version()
 {
     char *s = __ppp_c_flags_version;
@@ -11,10 +11,11 @@ const char *ppp_c_flags_version()
     {
         uint32_t version = PPP_C_FLAGS_VERSION;
         sprintf(s + 1,
-                "%3d.%3d.%3d",
+                "%u.%u.%u",
                 (version / 1000 / 1000) % 1000,
                 (version / 1000) % 1000,
                 (version) % 1000);
+        s[0] = 1;
     }
     return s + 1;
 }
@@ -1589,24 +1590,30 @@ int ppp_c_flags_parse_int64(
     }
     if (bit_size == 0)
     {
-        bit_size = 64;
+        bit_size = 63;
+    }
+    else
+    {
+        bit_size--;
     }
     uint64_t cutoff = 1;
-    cutoff <<= (bit_size - 1);
-
-    if (!neg && un >= cutoff)
+    cutoff <<= bit_size;
+    if (neg)
+    {
+        if (un > cutoff)
+        {
+            if (output)
+            {
+                *output = -(int64_t)(cutoff);
+            }
+            return 1;
+        }
+    }
+    else if (un >= cutoff)
     {
         if (output)
         {
             *output = cutoff - 1;
-        }
-        return 1;
-    }
-    if (neg && un > cutoff)
-    {
-        if (output)
-        {
-            *output = -(int64_t)(cutoff);
         }
         return 1;
     }

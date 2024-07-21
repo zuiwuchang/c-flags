@@ -1,4 +1,4 @@
-#include "flags.h"
+#include "../flags.h"
 #include "value.h"
 #include "value_array.h"
 #include <stdio.h>
@@ -45,9 +45,13 @@ int main(int argc, char **argv)
     int err;
     // Create root command
     root_flags_t main_falgs = {0};
+    char describe[16 + (3 + 1) * 3] = {0};
+    memcpy(describe, "c-flags example ", 16);
+    const char *version = ppp_c_flags_version();
+    memcpy(describe + 16, version, strlen(version));
     ppp_c_flags_command_t *root = ppp_c_flags_command_create(
         ppp_c_flags_base_name(argv[0]),
-        "c-flags example",
+        describe,
         root_handler, &main_falgs,
         &err);
     if (!root)

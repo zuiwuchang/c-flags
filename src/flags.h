@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define PPP_C_FLAGS_VERSION 1
+#define PPP_C_FLAGS_VERSION (1 * 1000 * 1000 + 0 * 1000 + 0)
 
 #ifndef PPP_C_FLAGS_DISABLE_VERIFY
 #define PPP_C_FLAGS_DISABLE_VERIFY 0
@@ -38,7 +38,7 @@
 
 /**
  * Get version string
-*/
+ */
 const char *ppp_c_flags_version();
 /**
  * Get error string information
