@@ -284,6 +284,27 @@ ppp_c_flags_flag_t *ppp_c_flags_add_flag(
     void *value, const int value_type,
     int *err);
 
+#define PPP_C_FLAGS_ADD_FLAG(command, name, short_name, describe, value, value_type, err, fail) \
+    if (!ppp_c_flags_add_flag(command, name, short_name, describe, value, value_type, err))     \
+    {                                                                                           \
+        printf("Add flags fail: --%s %s\n", name, ppp_c_flags_error(*(err)));                   \
+        goto fail;                                                                              \
+    }
+#define PPP_C_FLAGS_SET_ADD_FLAG(flag, command, name, short_name, describe, value, value_type, err, fail) \
+    falg = ppp_c_flags_add_flag(command, name, short_name, describe, value, value_type, err);             \
+    if (!falg)                                                                                            \
+    {                                                                                                     \
+        printf("Add flags fail: --%s %s\n", name, ppp_c_flags_error(*(err)));                             \
+        goto fail;                                                                                        \
+    }
+#define PPP_C_FLAGS_VAR_ADD_FLAG(flag, command, name, short_name, describe, value, value_type, err, fail)         \
+    ppp_c_flags_flag_t *falg = ppp_c_flags_add_flag(command, name, short_name, describe, value, value_type, err); \
+    if (!falg)                                                                                                    \
+    {                                                                                                             \
+        printf("Add flags fail: --%s %s\n", name, ppp_c_flags_error(*(err)));                                     \
+        goto fail;                                                                                                \
+    }
+
 /**
  * Instructions for using the output command
  */
