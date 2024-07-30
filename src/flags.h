@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define PPP_C_FLAGS_VERSION (1 * 1000 * 1000 + 0 * 1000 + 0)
+#define PPP_C_FLAGS_VERSION (1 * 1000 * 1000 + 0 * 1000 + 1)
 
 #ifndef PPP_C_FLAGS_DISABLE_VERIFY
 #define PPP_C_FLAGS_DISABLE_VERIFY 0
